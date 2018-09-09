@@ -1,0 +1,12 @@
+[
+    { "keys": ["tab"], "command": "tab_nine_leader_key", "context": [ { "key": "tab_nine_leader_key_available", "operator": "equal", "operand": true }] },
+    { "keys": ["1"], "command": "tab_nine", "args": {"num": 1 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 1 }] },
+    { "keys": ["2"], "command": "tab_nine", "args": {"num": 2 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 2 }] },
+    { "keys": ["3"], "command": "tab_nine", "args": {"num": 3 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 3 }] },
+    { "keys": ["4"], "command": "tab_nine", "args": {"num": 4 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 4 }] },
+    { "keys": ["5"], "command": "tab_nine", "args": {"num": 5 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 5 }] },
+    { "keys": ["6"], "command": "tab_nine", "args": {"num": 6 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 6 }] },
+    { "keys": ["7"], "command": "tab_nine", "args": {"num": 7 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 7 }] },
+    { "keys": ["8"], "command": "tab_nine", "args": {"num": 8 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 8 }] },
+    { "keys": ["9"], "command": "tab_nine", "args": {"num": 9 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 9 }] }
+]

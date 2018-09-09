@@ -1,0 +1,4 @@
+{
+    // We suppress the default autocompletion popup because it's confusing to have two popups.
+    "auto_complete": false
+}
