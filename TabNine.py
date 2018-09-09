@@ -6,6 +6,7 @@ import json
 import os
 
 CHAR_LIMIT = 2000
+MAX_RESTARTS = 3
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):
@@ -65,11 +66,13 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def request(self, req):
         if self.tabnine_proc.poll():
-            print("TabNine subprocess died")
-            if self.num_restarts < 3:
-                print("restarting it...")
+            print("TabNine subprocess is dead")
+            if self.num_restarts < MAX_RESTARTS:
+                print("Restarting it...")
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
+            else:
+                return None
         req = {
             "version": "0.4.0",
             "request": req
@@ -82,9 +85,11 @@ class TabNineListener(sublime_plugin.EventListener):
             result = self.tabnine_proc.stdout.readline()
             result = str(result, "UTF-8")
             return json.loads(result)
-        except Exception as e:
-            print("received exception while interacting with subprocess", e) 
-            self.restart_tabnine_proc()
+        except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
+            print("Exception while interacting with TabNine subprocess:", e) 
+            if self.num_restarts < MAX_RESTARTS:
+                self.num_restarts += 1
+                self.restart_tabnine_proc()
 
     def get_before(self, view):
         loc = view.sel()[0].begin()
@@ -263,5 +268,5 @@ def get_tabnine_path(binary_dir):
         key = sublime.platform(), sublime.arch()
         path = join_path(version, translation[key])
         if os.path.isfile(path) and os.access(path, os.X_OK):
-            print("starting version", version)
+            print("TabNine: starting version", version)
             return path
