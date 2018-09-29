@@ -6,7 +6,7 @@ import json
 import os
 
 CHAR_LIMIT = 2000
-MAX_RESTARTS = 3
+MAX_RESTARTS = 10
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):
@@ -140,7 +140,8 @@ class TabNineListener(sublime_plugin.EventListener):
         return (self.actions_since_completion >= 1
             and view.sel()[0].begin() == view.sel()[0].end()
             and new_before != ""
-            and old_after == new_after
+            and len(view.sel()) == 1
+            and (new_after[:100] != old_after[1:101] or new_after == "")
             and old_before[-100:] == new_before[-101:-1])
 
     def max_num_results(self):
