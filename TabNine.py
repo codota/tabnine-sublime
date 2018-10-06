@@ -5,7 +5,7 @@ import subprocess
 import json
 import os
 
-CHAR_LIMIT = 2000
+AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
 
 class TabNineCommand(sublime_plugin.TextCommand):
@@ -91,13 +91,13 @@ class TabNineListener(sublime_plugin.EventListener):
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
 
-    def get_before(self, view):
+    def get_before(self, view, char_limit):
         loc = view.sel()[0].begin()
-        begin = max(0, loc - CHAR_LIMIT)
+        begin = max(0, loc - char_limit)
         return view.substr(sublime.Region(begin, loc)), begin == 0, loc
-    def get_after(self, view):
+    def get_after(self, view, char_limit):
         loc = view.sel()[0].end()
-        end = min(view.size(), loc + CHAR_LIMIT)
+        end = min(view.size(), loc + char_limit)
         return view.substr(sublime.Region(loc, end)), end == view.size()
 
     def on_selection_modified(self, view):
@@ -116,10 +116,12 @@ class TabNineListener(sublime_plugin.EventListener):
             self.request(request)
 
     def on_any_event(self, view):
-        (new_before,
+        (
+            new_before,
             self.region_includes_beginning,
-            self.before_begin_location) = self.get_before(view)
-        new_after, self.region_includes_end = self.get_after(view)
+            self.before_begin_location,
+        ) = self.get_before(view, AUTOCOMPLETE_CHAR_LIMIT)
+        new_after, self.region_includes_end = self.get_after(view, AUTOCOMPLETE_CHAR_LIMIT)
         self.autocompleting = self.should_autocomplete(
             view,
             old_before=self.before,
