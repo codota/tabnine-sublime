@@ -152,8 +152,11 @@ class TabNineListener(sublime_plugin.EventListener):
             and (new_after[:100] != old_after[1:101] or new_after == "")
             and old_before[-100:] == new_before[-101:-1])
 
+    def get_settings(self):
+        return sublime.load_settings(SETTINGS_PATH)
+
     def max_num_results(self):
-        return sublime.load_settings(SETTINGS_PATH).get("max_num_results")
+        return self.get_settings().get("max_num_results")
 
     def on_selection_modified_async(self, view):
         if not self.autocompleting:
@@ -192,7 +195,7 @@ class TabNineListener(sublime_plugin.EventListener):
         if "promotional_message" in response:
             for line in response["promotional_message"]:
                 to_show.append("""<span style="font-size: 10;">""" + escape(line) + "</span>")
-        elif not active and not self.settings.get("hide_promotional_message"):
+        elif not active and not self.get_settings().get("hide_promotional_message"):
             to_show.append("""<span style="font-size: 10;">Upgrade to get additional features at <a href="https://tabnine.com">tabnine.com</a></span>""")
         to_show = "<br>".join(to_show)
         if self.choices == []:
