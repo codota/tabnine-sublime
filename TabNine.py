@@ -7,6 +7,7 @@ import os
 
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
+SETTINGS_PATH = 'TabNine.sublime-settings'
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):
@@ -36,9 +37,11 @@ class TabNineListener(sublime_plugin.EventListener):
         self.actions_since_completion = 1
         self.install_directory = os.path.dirname(os.path.realpath(__file__))
         self.tabnine_proc = None
-        self.settings = sublime.load_settings("TabNine.sublime-settings")
         self.num_restarts = 0
-        self.restart_tabnine_proc()
+        def on_change():
+            self.num_restarts = 0
+            self.restart_tabnine_proc()
+        sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
 
     def restart_tabnine_proc(self):
         if self.tabnine_proc is not None:
@@ -47,14 +50,15 @@ class TabNineListener(sublime_plugin.EventListener):
             except Exception:
                 pass
         binary_dir = os.path.join(self.install_directory, "binaries")
-        tabnine_path = self.settings.get("custom_binary_path")
+        settings = sublime.load_settings(SETTINGS_PATH)
+        tabnine_path = settings.get("custom_binary_path")
         if tabnine_path is None:
             tabnine_path = get_tabnine_path(binary_dir)
         args = [tabnine_path, "--client", "sublime"]
-        log_file_path = self.settings.get("log_file_path")
+        log_file_path = settings.get("log_file_path")
         if log_file_path is not None:
             args += ["--log-file-path", log_file_path]
-        extra_args = self.settings.get("extra_args")
+        extra_args = settings.get("extra_args")
         if extra_args is not None:
             args += extra_args
         self.tabnine_proc = subprocess.Popen(
@@ -65,6 +69,8 @@ class TabNineListener(sublime_plugin.EventListener):
             startupinfo=get_startup_info(sublime.platform()))
 
     def request(self, req):
+        if self.tabnine_proc is None:
+            self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
             print("TabNine subprocess is dead")
             if self.num_restarts < MAX_RESTARTS:
@@ -147,7 +153,7 @@ class TabNineListener(sublime_plugin.EventListener):
             and old_before[-100:] == new_before[-101:-1])
 
     def max_num_results(self):
-        return self.settings.get("max_num_results")
+        return sublime.load_settings(SETTINGS_PATH).get("max_num_results")
 
     def on_selection_modified_async(self, view):
         if not self.autocompleting:
@@ -184,7 +190,6 @@ class TabNineListener(sublime_plugin.EventListener):
             to_show[i] = with_padding + annotation
         active = "is_active" in response and response["is_active"]
         if "promotional_message" in response:
-            print(response["promotional_message"])
             for line in response["promotional_message"]:
                 to_show.append("""<span style="font-size: 10;">""" + escape(line) + "</span>")
         elif not active and not self.settings.get("hide_promotional_message"):
