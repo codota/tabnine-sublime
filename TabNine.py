@@ -18,7 +18,11 @@ class TabNineLeaderKeyCommand(TabNineCommand):
     pass
 
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
-    def run(self, edit, *, region_begin, region_end, substitution, prefix):
+    def run(self, edit, *, region_begin, region_end, substitution, prefix, old_prefix):
+        if old_prefix is not None:
+            self.view.insert(edit, region_end, old_prefix)
+            self.view.sel().clear()
+            self.view.sel().add(region_end)
         region_end += len(prefix)
         region = sublime.Region(region_begin, region_end)
         self.view.erase(edit, region)
@@ -38,6 +42,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.install_directory = os.path.dirname(os.path.realpath(__file__))
         self.tabnine_proc = None
         self.num_restarts = 0
+        self.old_prefix = None
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
@@ -175,6 +180,7 @@ class TabNineListener(sublime_plugin.EventListener):
         if response is None or not self.autocompleting:
             return
         self.tab_index = 0
+        self.old_prefix = None
         self.suffix_to_substitute = response["suffix_to_substitute"]
         self.choices = response["results"]
         self.choices = self.choices[:9]
@@ -214,8 +220,8 @@ class TabNineListener(sublime_plugin.EventListener):
         choice = self.choices[choice_index]
         substitution = choice["result"]
         prefix = choice["prefix_to_substitute"]
+        self.substitute_interval = a, (a + len(substitution))
         self.actions_since_completion = 0
-        self.substitute_interval = a, a+len(substitution)
         if len(self.choices) == 1:
             self.choices = []
         new_args = {
@@ -223,7 +229,9 @@ class TabNineListener(sublime_plugin.EventListener):
             "region_end": b,
             "substitution": substitution,
             "prefix": prefix,
+            "old_prefix": self.old_prefix,
         }
+        self.old_prefix = prefix
         return "tab_nine_substitute", new_args
 
     def on_text_command(self, view, command_name, args):
