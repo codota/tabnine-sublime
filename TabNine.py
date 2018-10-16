@@ -16,6 +16,8 @@ class TabNineCommand(sublime_plugin.TextCommand):
 
 class TabNineLeaderKeyCommand(TabNineCommand):
     pass
+class TabNineReverseLeaderKeyCommand(TabNineCommand):
+    pass
 
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
     def run(self, edit, *, region_begin, region_end, substitution, prefix, old_prefix):
@@ -245,14 +247,22 @@ class TabNineListener(sublime_plugin.EventListener):
             return result
         if command_name in ["insert_best_completion", "tab_nine_leader_key"] and len(self.choices) >= 1:
             return self.insert_completion(self.tab_index)
+        if command_name == "tab_nine_reverse_leader_key" and len(self.choices) >= 1:
+            index = (self.tab_index - 2 + len(self.choices)) % len(self.choices)
+            return self.insert_completion(index)
 
     def on_query_context(self, view, key, operator, operand, match_all):
         if key == "tab_nine_choice_available":
             assert operator == sublime.OP_EQUAL
+            if operand == 1:
+                return False # disable Tab+1
             return (not view.is_popup_visible()) and operand - 1 < len(self.choices)
         if key == "tab_nine_leader_key_available":
             assert operator == sublime.OP_EQUAL
             return (self.choices != [] and view.is_popup_visible()) == operand
+        if key == "tab_nine_reverse_leader_key_available":
+            assert operator == sublime.OP_EQUAL
+            return (self.choices != []) == operand
 
 def get_startup_info(platform):
     if platform == "windows":

@@ -1,5 +1,6 @@
 [
     { "keys": ["tab"], "command": "tab_nine_leader_key", "context": [ { "key": "tab_nine_leader_key_available", "operator": "equal", "operand": true }] },
+    { "keys": ["shift+tab"], "command": "tab_nine_reverse_leader_key", "context": [ { "key": "tab_nine_reverse_leader_key_available", "operator": "equal", "operand": true }] },
     { "keys": ["1"], "command": "tab_nine", "args": {"num": 1 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 1 }] },
     { "keys": ["2"], "command": "tab_nine", "args": {"num": 2 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 2 }] },
     { "keys": ["3"], "command": "tab_nine", "args": {"num": 3 }, "context": [ { "key": "tab_nine_choice_available", "operator": "equal", "operand": 3 }] },
