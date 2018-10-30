@@ -4,6 +4,7 @@ import html
 import subprocess
 import json
 import os
+import stat
 
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
@@ -303,6 +304,13 @@ def get_tabnine_path(binary_dir):
     for version in versions:
         key = sublime.platform(), sublime.arch()
         path = join_path(version, translation[key])
-        if os.path.isfile(path) and os.access(path, os.X_OK):
+        if os.path.isfile(path):
+            add_execute_permission(path)
             print("TabNine: starting version", version)
             return path
+
+def add_execute_permission(path):
+    st = os.stat(path)
+    new_mode = st.st_mode | stat.S_IEXEC
+    if new_mode != st.st_mode:
+        os.chmod(path, new_mode)
