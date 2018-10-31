@@ -9,6 +9,7 @@ import stat
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
 SETTINGS_PATH = 'TabNine.sublime-settings'
+PREFERENCES_PATH = 'Preferences.sublime-settings'
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):
@@ -50,6 +51,7 @@ class TabNineListener(sublime_plugin.EventListener):
             self.num_restarts = 0
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
+        sublime.load_settings(PREFERENCES_PATH).set('auto_complete', False)
 
     def restart_tabnine_proc(self):
         if self.tabnine_proc is not None:
