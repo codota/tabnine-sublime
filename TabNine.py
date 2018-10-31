@@ -206,8 +206,6 @@ class TabNineListener(sublime_plugin.EventListener):
         if "promotional_message" in response:
             for line in response["promotional_message"]:
                 to_show.append("""<span style="font-size: 10;">""" + escape(line) + "</span>")
-        elif not active and not self.get_settings().get("hide_promotional_message"):
-            to_show.append("""<span style="font-size: 10;">Upgrade to get additional features at <a href="https://tabnine.com">tabnine.com</a></span>""")
         to_show = "<br>".join(to_show)
         if self.choices == []:
             view.hide_popup()
