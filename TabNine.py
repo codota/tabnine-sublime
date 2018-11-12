@@ -52,6 +52,8 @@ class TabNineListener(sublime_plugin.EventListener):
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
         sublime.load_settings(PREFERENCES_PATH).set('auto_complete', False)
+        sublime.save_settings(PREFERENCES_PATH)
+
 
     def restart_tabnine_proc(self):
         if self.tabnine_proc is not None:
@@ -197,8 +199,10 @@ class TabNineListener(sublime_plugin.EventListener):
             padding = max_len - len(to_show[i]) + 2
             if i == 0:
                 annotation = "&nbsp;" * 2 + "Tab"
-            else:
+            elif i < 9:
                 annotation = "Tab+" + str(i + 1)
+            else:
+                annotation = ""
             annotation = "<i>" + annotation + "</i>"
             with_padding = escape(to_show[i] + " " * padding)
             to_show[i] = with_padding + annotation
