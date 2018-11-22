@@ -1,5 +1,5 @@
-binaries
-!binaries/0.4.7
+binaries/*
+!binaries/1.0.7
 
 registration_key
 sig
