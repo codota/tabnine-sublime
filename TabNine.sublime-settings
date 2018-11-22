@@ -1,3 +1,9 @@
 {
     "max_num_results": 5,
+
+    // Determines whether documentation for a suggested result is shown after the result is selected.
+    "documentation": true,
+
+    // Determines whether detail for each suggested result is shown next to the result in the popup.
+    "detail": true
 }

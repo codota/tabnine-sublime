@@ -5,11 +5,15 @@ import subprocess
 import json
 import os
 import stat
+import webbrowser
+import mdpopups
 
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
 SETTINGS_PATH = 'TabNine.sublime-settings'
 PREFERENCES_PATH = 'Preferences.sublime-settings'
+
+GLOBAL_IGNORE_EVENTS = False
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):
@@ -22,7 +26,7 @@ class TabNineReverseLeaderKeyCommand(TabNineCommand):
     pass
 
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
-    def run(self, edit, *, region_begin, region_end, substitution, prefix, old_prefix):
+    def run(self, edit, *, region_begin, region_end, substitution, new_cursor_pos, prefix, old_prefix, documentation):
         if old_prefix is not None:
             self.view.insert(edit, region_end, old_prefix)
             self.view.sel().clear()
@@ -31,6 +35,15 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
         region = sublime.Region(region_begin, region_end)
         self.view.erase(edit, region)
         self.view.insert(edit, region_begin, substitution)
+        self.view.sel().clear()
+        self.view.sel().add(region_begin + new_cursor_pos)
+        if documentation is None:
+            self.view.hide_popup()
+        else:
+            if isinstance(documentation, dict) and 'kind' in documentation and documentation['kind'] == 'markdown' and 'value' in documentation:
+                my_show_popup(self.view, documentation['value'], region_begin, markdown=True)
+            else:
+                my_show_popup(self.view, str(documentation), region_begin, markdown=False)
 
 class TabNineListener(sublime_plugin.EventListener):
     def __init__(self):
@@ -47,13 +60,13 @@ class TabNineListener(sublime_plugin.EventListener):
         self.tabnine_proc = None
         self.num_restarts = 0
         self.old_prefix = None
+        self.popup_is_ours = False
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
         sublime.load_settings(PREFERENCES_PATH).set('auto_complete', False)
         sublime.save_settings(PREFERENCES_PATH)
-
 
     def restart_tabnine_proc(self):
         if self.tabnine_proc is not None:
@@ -92,7 +105,7 @@ class TabNineListener(sublime_plugin.EventListener):
             else:
                 return None
         req = {
-            "version": "0.4.0",
+            "version": "1.0.0",
             "request": req
         }
         req = json.dumps(req)
@@ -134,6 +147,8 @@ class TabNineListener(sublime_plugin.EventListener):
             self.request(request)
 
     def on_any_event(self, view):
+        if view.is_scratch() or GLOBAL_IGNORE_EVENTS:
+            return
         (
             new_before,
             self.region_includes_beginning,
@@ -152,7 +167,9 @@ class TabNineListener(sublime_plugin.EventListener):
         if self.autocompleting:
             pass # on_selection_modified_async will show the popup
         else:
-            view.hide_popup()
+            if self.popup_is_ours:
+                view.hide_popup()
+                self.popup_is_ours = False
             if self.actions_since_completion >= 2:
                 self.choices = []
 
@@ -173,6 +190,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_selection_modified_async(self, view):
         if not self.autocompleting:
             return
+        max_num_results = self.max_num_results()
         request = {
             "Autocomplete": {
                 "before": self.before,
@@ -180,7 +198,7 @@ class TabNineListener(sublime_plugin.EventListener):
                 "filename": view.file_name(),
                 "region_includes_beginning": self.region_includes_beginning,
                 "region_includes_end": self.region_includes_end,
-                "max_num_results": self.max_num_results()
+                "max_num_results": max_num_results,
             }
         }
         response = self.request(request)
@@ -188,13 +206,14 @@ class TabNineListener(sublime_plugin.EventListener):
             return
         self.tab_index = 0
         self.old_prefix = None
-        self.suffix_to_substitute = response["suffix_to_substitute"]
+        self.suffix_to_substitute = response["old_prefix"]
         self.choices = response["results"]
-        self.choices = self.choices[:9]
+        self.choices = self.choices[:min(9, max_num_results)]
         substitute_begin = self.before_begin_location - len(self.suffix_to_substitute)
         self.substitute_interval = (substitute_begin, self.before_begin_location)
-        to_show = [choice["result"] for choice in self.choices]
+        to_show = [choice["new_prefix"] for choice in self.choices]
         max_len = max([len(x) for x in to_show] or [0])
+        show_detail = self.get_settings().get("detail")
         for i in range(len(to_show)):
             padding = max_len - len(to_show[i]) + 2
             if i == 0:
@@ -204,40 +223,49 @@ class TabNineListener(sublime_plugin.EventListener):
             else:
                 annotation = ""
             annotation = "<i>" + annotation + "</i>"
+            choice = self.choices[i]
+            if show_detail and 'detail' in choice and isinstance(choice['detail'], str):
+                annotation += escape("  " + choice['detail'].replace('\n', ' '))
             with_padding = escape(to_show[i] + " " * padding)
             to_show[i] = with_padding + annotation
         active = "is_active" in response and response["is_active"]
-        if "promotional_message" in response:
-            for line in response["promotional_message"]:
+        if "user_message" in response:
+            for line in response["user_message"]:
                 to_show.append("""<span style="font-size: 10;">""" + escape(line) + "</span>")
         to_show = "<br>".join(to_show)
         if self.choices == []:
             view.hide_popup()
         else:
-            view.show_popup(
-                to_show,
-                sublime.COOPERATE_WITH_AUTO_COMPLETE,
-                location=substitute_begin,
-                max_width=1000,
-                max_height=1000)
+            my_show_popup(view, to_show, substitute_begin)
+            self.popup_is_ours = True
 
-    def insert_completion(self, choice_index):
+    def insert_completion(self, view, choice_index):
         self.tab_index = (choice_index + 1) % len(self.choices)
         a, b = self.substitute_interval
         choice = self.choices[choice_index]
-        substitution = choice["result"]
-        prefix = choice["prefix_to_substitute"]
+        new_prefix = choice["new_prefix"]
+        prefix = choice["old_suffix"]
+        new_suffix = choice["new_suffix"]
+        substitution = new_prefix + new_suffix
         self.substitute_interval = a, (a + len(substitution))
         self.actions_since_completion = 0
         if len(self.choices) == 1:
             self.choices = []
+        if self.get_settings().get("documentation"):
+            documentation = get_additional_detail(choice)
+        else:
+            documentation = None
         new_args = {
             "region_begin": a,
             "region_end": b,
             "substitution": substitution,
+            "new_cursor_pos": len(new_prefix),
             "prefix": prefix,
             "old_prefix": self.old_prefix,
+            "documentation": documentation, 
         }
+        if documentation is not None:
+            self.popup_is_ours = False
         self.old_prefix = prefix
         return "tab_nine_substitute", new_args
 
@@ -247,21 +275,21 @@ class TabNineListener(sublime_plugin.EventListener):
             choice_index = num - 1
             if choice_index < 0 or choice_index >= len(self.choices):
                 return None
-            result = self.insert_completion(choice_index)
+            result = self.insert_completion(view, choice_index)
             self.choices = []
             return result
         if command_name in ["insert_best_completion", "tab_nine_leader_key"] and len(self.choices) >= 1:
-            return self.insert_completion(self.tab_index)
+            return self.insert_completion(view, self.tab_index)
         if command_name == "tab_nine_reverse_leader_key" and len(self.choices) >= 1:
             index = (self.tab_index - 2 + len(self.choices)) % len(self.choices)
-            return self.insert_completion(index)
+            return self.insert_completion(view, index)
 
     def on_query_context(self, view, key, operator, operand, match_all):
         if key == "tab_nine_choice_available":
             assert operator == sublime.OP_EQUAL
             if operand == 1:
                 return False # disable Tab+1
-            return (not view.is_popup_visible()) and operand - 1 < len(self.choices)
+            return (not self.popup_is_ours) and operand - 1 < len(self.choices)
         if key == "tab_nine_leader_key_available":
             assert operator == sublime.OP_EQUAL
             return (self.choices != [] and view.is_popup_visible()) == operand
@@ -280,7 +308,33 @@ def get_startup_info(platform):
 def escape(s):
     s = html.escape(s, quote=False)
     s = s.replace(" ", "&nbsp;")
+    urls = [
+        ('https://tabnine.com/semantic', None, 'tabnine.com/semantic'),
+        ('tabnine.com/semantic', 'https://tabnine.com/semantic', 'tabnine.com/semantic'),
+        ('tabnine.com', 'https://tabnine.com', 'tabnine.com'),
+    ]
+    for url, navigate_to, display in urls:
+        if url in s:
+            if navigate_to is None:
+                navigate_to = url
+            s = s.replace(html.escape(url), '<a href="{}">{}</a>'.format(url, display))
+            break
     return s
+    s
+
+def get_additional_detail(choice):
+    s = None
+    if 'documentation' in choice:
+        s = choice['documentation']
+    return s
+
+def format_documentation(documentation):
+    if isinstance(documentation, str):
+        return escape(documentation)
+    elif isinstance(documentation, dict) and 'kind' in documentation and documentation['kind'] == 'markdown' and 'value' in documentation:
+        return escape(documentation['value'])
+    else:
+        return escape(str(documentation))
 
 def parse_semver(s):
     try:
@@ -291,6 +345,30 @@ def parse_semver(s):
 assert parse_semver("0.01.10") == [0, 1, 10]
 assert parse_semver("hello") == []
 assert parse_semver("hello") < parse_semver("0.9.0") < parse_semver("1.0.0")
+
+def my_show_popup(view, content, location, markdown=None):
+    global GLOBAL_IGNORE_EVENTS
+    GLOBAL_IGNORE_EVENTS = True
+    if markdown is None:
+        view.show_popup(
+            content,
+            sublime.COOPERATE_WITH_AUTO_COMPLETE,
+            location=location,
+            max_width=600,
+            max_height=400,
+            on_navigate=webbrowser.open,
+        )
+    else:
+        mdpopups.show_popup(
+            view,
+            content,
+            sublime.COOPERATE_WITH_AUTO_COMPLETE,
+            location=location,
+            max_width=800,
+            max_height=400,
+            on_navigate=webbrowser.open,
+        )
+    GLOBAL_IGNORE_EVENTS = False
 
 def get_tabnine_path(binary_dir):
     def join_path(*args):
