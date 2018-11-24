@@ -6,7 +6,6 @@ import json
 import os
 import stat
 import webbrowser
-import mdpopups
 
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 MAX_RESTARTS = 10
@@ -359,8 +358,8 @@ def my_show_popup(view, content, location, markdown=None):
             on_navigate=webbrowser.open,
         )
     else:
-        mdpopups.show_popup(
-            view,
+        content = escape(content)
+        view.show_popup(
             content,
             sublime.COOPERATE_WITH_AUTO_COMPLETE,
             location=location,
