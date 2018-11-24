@@ -47,7 +47,6 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
 
 class TabNineListener(sublime_plugin.EventListener):
     def __init__(self):
-        print('hello')
         self.before = ""
         self.after = ""
         self.region_includes_beginning = False
