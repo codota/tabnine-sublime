@@ -207,7 +207,10 @@ class TabNineListener(sublime_plugin.EventListener):
         self.old_prefix = None
         self.suffix_to_substitute = response["old_prefix"]
         self.choices = response["results"]
-        self.choices = self.choices[:min(9, max_num_results)]
+        max_choices = 9
+        if max_num_results is not None:
+            max_choices = min(max_choices, max_num_results)
+        self.choices = self.choices[:max_choices]
         substitute_begin = self.before_begin_location - len(self.suffix_to_substitute)
         self.substitute_interval = (substitute_begin, self.before_begin_location)
         to_show = [choice["new_prefix"] for choice in self.choices]
