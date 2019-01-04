@@ -29,14 +29,14 @@
                                 "caption": "Key Bindings - Default",
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/TabNine/Default.sublime-keymap",
+                                    "file": "${packages}/TabNine/Default.sublime-keymap"
                                 }
                             },
                             {
                                 "caption": "Key Bindings - User",
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/User/Default.sublime-keymap",
+                                    "file": "${packages}/User/Default.sublime-keymap"
                                 }
                             }
                         ]
