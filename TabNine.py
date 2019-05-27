@@ -15,9 +15,8 @@ PREFERENCES_PATH = 'Preferences.sublime-settings'
 GLOBAL_IGNORE_EVENTS = False
 
 class TabNineCommand(sublime_plugin.TextCommand):
-    def run(*args, **kwargs):
+    def run(*args, **kwargs): #pylint: disable=W0613,E0211
         print("TabNine commands are supposed to be intercepted by TabNineListener")
-        pass
 
 class TabNineLeaderKeyCommand(TabNineCommand):
     pass
@@ -60,6 +59,11 @@ class TabNineListener(sublime_plugin.EventListener):
         self.num_restarts = 0
         self.old_prefix = None
         self.popup_is_ours = False
+
+        self.tab_index = 0
+        self.old_prefix = None
+        self.suffix_to_substitute = ""
+
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
@@ -71,7 +75,7 @@ class TabNineListener(sublime_plugin.EventListener):
         if self.tabnine_proc is not None:
             try:
                 self.tabnine_proc.terminate()
-            except Exception:
+            except Exception: #pylint: disable=W0703
                 pass
         binary_dir = os.path.join(self.install_directory, "binaries")
         settings = sublime.load_settings(SETTINGS_PATH)
@@ -89,7 +93,7 @@ class TabNineListener(sublime_plugin.EventListener):
             args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
             startupinfo=get_startup_info(sublime.platform()))
 
     def request(self, req):
@@ -230,18 +234,18 @@ class TabNineListener(sublime_plugin.EventListener):
                 annotation += escape("  " + choice['detail'].replace('\n', ' '))
             with_padding = escape(to_show[i] + " " * padding)
             to_show[i] = with_padding + annotation
-        active = "is_active" in response and response["is_active"]
         if "user_message" in response:
             for line in response["user_message"]:
                 to_show.append("""<span style="font-size: 10;">""" + escape(line) + "</span>")
         to_show = "<br>".join(to_show)
+
         if self.choices == []:
             view.hide_popup()
         else:
             my_show_popup(view, to_show, substitute_begin)
             self.popup_is_ours = True
 
-    def insert_completion(self, view, choice_index):
+    def insert_completion(self, view, choice_index): #pylint: disable=W0613
         self.tab_index = (choice_index + 1) % len(self.choices)
         a, b = self.substitute_interval
         choice = self.choices[choice_index]
@@ -286,7 +290,7 @@ class TabNineListener(sublime_plugin.EventListener):
             index = (self.tab_index - 2 + len(self.choices)) % len(self.choices)
             return self.insert_completion(view, index)
 
-    def on_query_context(self, view, key, operator, operand, match_all):
+    def on_query_context(self, view, key, operator, operand, match_all): #pylint: disable=W0613
         if key == "tab_nine_choice_available":
             assert operator == sublime.OP_EQUAL
             if operand == 1:
@@ -322,7 +326,6 @@ def escape(s):
             s = s.replace(html.escape(url), '<a href="{}">{}</a>'.format(url, display))
             break
     return s
-    s
 
 def get_additional_detail(choice):
     s = None
