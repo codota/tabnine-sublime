@@ -25,16 +25,30 @@ class TabNineReverseLeaderKeyCommand(TabNineCommand):
 
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
     def run(self, edit, *, region_begin, region_end, substitution, new_cursor_pos, prefix, old_prefix, documentation):
+        normalize_offset = -self.view.sel()[0].begin()
+        def normalize(x, sel):
+            if isinstance(x, sublime.Region):
+                return sublime.Region(normalize(x.begin(), sel), normalize(x.end(), sel))
+            else:
+                return normalize_offset + x + sel.begin() 
         if old_prefix is not None:
-            self.view.insert(edit, region_end, old_prefix)
-            self.view.sel().clear()
-            self.view.sel().add(region_end)
+            for i in range(len(self.view.sel())):
+                sel = self.view.sel()[i]
+                t_region_end = normalize(region_end, sel)
+                self.view.sel().subtract(sel)
+                self.view.insert(edit, t_region_end, old_prefix)
+                self.view.sel().add(t_region_end)
+        normalize_offset = -self.view.sel()[0].begin()
         region_end += len(prefix)
         region = sublime.Region(region_begin, region_end)
-        self.view.erase(edit, region)
-        self.view.insert(edit, region_begin, substitution)
-        self.view.sel().clear()
-        self.view.sel().add(region_begin + new_cursor_pos)
+        for i in range(len(self.view.sel())):
+            sel = self.view.sel()[i]
+            t_region = normalize(region, sel)
+            t_region_begin = normalize(region_begin, sel)
+            self.view.sel().subtract(sel)
+            self.view.erase(edit, t_region)
+            self.view.insert(edit, t_region_begin, substitution)
+            self.view.sel().add(t_region_begin + new_cursor_pos)
         if documentation is None:
             self.view.hide_popup()
         else:
@@ -59,6 +73,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.num_restarts = 0
         self.old_prefix = None
         self.popup_is_ours = False
+        self.seen_changes = False
 
         self.tab_index = 0
         self.old_prefix = None
@@ -134,6 +149,8 @@ class TabNineListener(sublime_plugin.EventListener):
         end = min(view.size(), loc + char_limit)
         return view.substr(sublime.Region(loc, end)), end == view.size()
 
+    def on_modified(self, view): #pylint: disable=W0613
+        self.seen_changes = True
     def on_selection_modified(self, view):
         self.on_any_event(view)
     def on_activated(self, view):
@@ -178,11 +195,39 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def should_autocomplete(self, view, *, old_before, old_after, new_before, new_after):
         return (self.actions_since_completion >= 1
-            and view.sel()[0].begin() == view.sel()[0].end()
+            and len(view.sel()) <= 100
+            and all(sel.begin() == sel.end() for sel in view.sel())
+            and self.all_same_prefix(view, [sel.begin() for sel in view.sel()])
+            and self.all_same_suffix(view, [sel.begin() for sel in view.sel()])
             and new_before != ""
-            and len(view.sel()) == 1
-            and (new_after[:100] != old_after[1:101] or new_after == "")
+            and (new_after[:100] != old_after[1:101] or new_after == "" or (len(view.sel()) >= 2) and self.seen_changes)
             and old_before[-100:] == new_before[-101:-1])
+
+    def all_same_prefix(self, view, positions):
+        return self.all_same(view, positions, -1, -1)
+    def all_same_suffix(self, view, positions):
+        return self.all_same(view, positions, 0, 1)
+
+    def all_same(self, view, positions, start, step):
+        if len(positions) <= 1:
+            return True
+        # We should ask TabNine for the identifier regex but this is simpler for now
+        def alnum_char_at(i):
+            if i >= 0:
+                s = view.substr(sublime.Region(i, i+1))
+                if s.isalnum():
+                    return s
+            return None
+        offset = start
+        while True:
+            next_chars = {alnum_char_at(pos + offset) for pos in positions}
+            if len(next_chars) != 1:
+                return False
+            if next(iter(next_chars)) is None:
+                return True
+            if offset <= -30:
+                return True
+            offset += step
 
     def get_settings(self):
         return sublime.load_settings(SETTINGS_PATH)
@@ -244,6 +289,7 @@ class TabNineListener(sublime_plugin.EventListener):
         else:
             my_show_popup(view, to_show, substitute_begin)
             self.popup_is_ours = True
+            self.seen_changes = False
 
     def insert_completion(self, view, choice_index): #pylint: disable=W0613
         self.tab_index = (choice_index + 1) % len(self.choices)
