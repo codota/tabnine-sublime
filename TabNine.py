@@ -167,6 +167,8 @@ class TabNineListener(sublime_plugin.EventListener):
             self.request(request)
 
     def on_any_event(self, view):
+        if view.id() != view.window().active_view().id():
+            return
         if view.is_scratch() or GLOBAL_IGNORE_EVENTS:
             return
         (
@@ -200,7 +202,7 @@ class TabNineListener(sublime_plugin.EventListener):
             and self.all_same_prefix(view, [sel.begin() for sel in view.sel()])
             and self.all_same_suffix(view, [sel.begin() for sel in view.sel()])
             and new_before != ""
-            and (new_after[:100] != old_after[1:101] or new_after == "" or (len(view.sel()) >= 2) and self.seen_changes)
+            and (new_after[:100] != old_after[1:101] or new_after == "" or (len(view.sel()) >= 2 and self.seen_changes))
             and old_before[-100:] == new_before[-101:-1])
 
     def all_same_prefix(self, view, positions):
