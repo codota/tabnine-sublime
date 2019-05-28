@@ -24,7 +24,11 @@ class TabNineReverseLeaderKeyCommand(TabNineCommand):
     pass
 
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
-    def run(self, edit, *, region_begin, region_end, substitution, new_cursor_pos, prefix, old_prefix, documentation):
+    def run(
+        self, edit, *,
+        region_begin, region_end, substitution, new_cursor_pos,
+        prefix, old_prefix, documentation, expected_prefix
+    ):
         normalize_offset = -self.view.sel()[0].begin()
         def normalize(x, sel):
             if isinstance(x, sublime.Region):
@@ -44,11 +48,18 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
         for i in range(len(self.view.sel())):
             sel = self.view.sel()[i]
             t_region = normalize(region, sel)
-            t_region_begin = normalize(region_begin, sel)
+            observed_prefix = self.view.substr(sublime.Region(t_region.begin(), sel.begin()))
+            if observed_prefix != expected_prefix:
+                new_begin = self.view.word(sel).begin()
+                print(
+                    'TabNine expected prefix "{}" but found prefix "{}", falling back to substituting from word beginning: "{}"'
+                        .format(expected_prefix, observed_prefix, self.view.substr(sublime.Region(new_begin, sel.begin())))
+                )
+                t_region = sublime.Region(new_begin, t_region.end())
             self.view.sel().subtract(sel)
             self.view.erase(edit, t_region)
-            self.view.insert(edit, t_region_begin, substitution)
-            self.view.sel().add(t_region_begin + new_cursor_pos)
+            self.view.insert(edit, t_region.begin(), substitution)
+            self.view.sel().add(t_region.begin() + new_cursor_pos)
         if documentation is None:
             self.view.hide_popup()
         else:
@@ -77,7 +88,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
         self.tab_index = 0
         self.old_prefix = None
-        self.suffix_to_substitute = ""
+        self.expected_prefix = ""
 
         def on_change():
             self.num_restarts = 0
@@ -168,6 +179,8 @@ class TabNineListener(sublime_plugin.EventListener):
             self.request(request)
 
     def on_any_event(self, view):
+        if view.window() is None:
+            return
         view = view.window().active_view()
         if view.is_scratch() or GLOBAL_IGNORE_EVENTS:
             return
@@ -240,6 +253,8 @@ class TabNineListener(sublime_plugin.EventListener):
         return self.get_settings().get("max_num_results")
 
     def on_selection_modified_async(self, view):
+        if view.window() is None:
+            return
         view = view.window().active_view()
         if not self.autocompleting:
             return
@@ -259,13 +274,13 @@ class TabNineListener(sublime_plugin.EventListener):
             return
         self.tab_index = 0
         self.old_prefix = None
-        self.suffix_to_substitute = response["old_prefix"]
+        self.expected_prefix = response["old_prefix"]
         self.choices = response["results"]
         max_choices = 9
         if max_num_results is not None:
             max_choices = min(max_choices, max_num_results)
         self.choices = self.choices[:max_choices]
-        substitute_begin = self.before_begin_location - len(self.suffix_to_substitute)
+        substitute_begin = self.before_begin_location - len(self.expected_prefix)
         self.substitute_interval = (substitute_begin, self.before_begin_location)
         to_show = [choice["new_prefix"] for choice in self.choices]
         max_len = max([len(x) for x in to_show] or [0])
@@ -301,7 +316,7 @@ class TabNineListener(sublime_plugin.EventListener):
         a, b = self.substitute_interval
         choice = self.choices[choice_index]
         new_prefix = choice["new_prefix"]
-        prefix = choice["old_suffix"]
+        prefix = choice["old_suffix"] # The naming here is very bad
         new_suffix = choice["new_suffix"]
         substitution = new_prefix + new_suffix
         self.substitute_interval = a, (a + len(substitution))
@@ -319,7 +334,8 @@ class TabNineListener(sublime_plugin.EventListener):
             "new_cursor_pos": len(new_prefix),
             "prefix": prefix,
             "old_prefix": self.old_prefix,
-            "documentation": documentation, 
+            "documentation": documentation,
+            "expected_prefix": self.expected_prefix,
         }
         if documentation is not None:
             self.popup_is_ours = False
