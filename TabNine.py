@@ -149,8 +149,9 @@ class TabNineListener(sublime_plugin.EventListener):
         end = min(view.size(), loc + char_limit)
         return view.substr(sublime.Region(loc, end)), end == view.size()
 
-    def on_modified(self, view): #pylint: disable=W0613
+    def on_modified(self, view):
         self.seen_changes = True
+        self.on_any_event(view)
     def on_selection_modified(self, view):
         self.on_any_event(view)
     def on_activated(self, view):
@@ -167,8 +168,7 @@ class TabNineListener(sublime_plugin.EventListener):
             self.request(request)
 
     def on_any_event(self, view):
-        if view.id() != view.window().active_view().id():
-            return
+        view = view.window().active_view()
         if view.is_scratch() or GLOBAL_IGNORE_EVENTS:
             return
         (
@@ -177,6 +177,8 @@ class TabNineListener(sublime_plugin.EventListener):
             self.before_begin_location,
         ) = self.get_before(view, AUTOCOMPLETE_CHAR_LIMIT)
         new_after, self.region_includes_end = self.get_after(view, AUTOCOMPLETE_CHAR_LIMIT)
+        if new_before == self.before and new_after == self.after:
+            return
         self.autocompleting = self.should_autocomplete(
             view,
             old_before=self.before,
@@ -238,6 +240,7 @@ class TabNineListener(sublime_plugin.EventListener):
         return self.get_settings().get("max_num_results")
 
     def on_selection_modified_async(self, view):
+        view = view.window().active_view()
         if not self.autocompleting:
             return
         max_num_results = self.max_num_results()
