@@ -35,6 +35,10 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
                 return sublime.Region(normalize(x.begin(), sel), normalize(x.end(), sel))
             else:
                 return normalize_offset + x + sel.begin() 
+        observed_prefixes = [
+            self.view.substr(sublime.Region(normalize(region_begin, sel), sel.begin()))
+            for sel in self.view.sel()
+        ]
         if old_prefix is not None:
             for i in range(len(self.view.sel())):
                 sel = self.view.sel()[i]
@@ -48,7 +52,7 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
         for i in range(len(self.view.sel())):
             sel = self.view.sel()[i]
             t_region = normalize(region, sel)
-            observed_prefix = self.view.substr(sublime.Region(t_region.begin(), sel.begin()))
+            observed_prefix = observed_prefixes[i]
             if observed_prefix != expected_prefix:
                 new_begin = self.view.word(sel).begin()
                 print(
@@ -337,6 +341,7 @@ class TabNineListener(sublime_plugin.EventListener):
             "documentation": documentation,
             "expected_prefix": self.expected_prefix,
         }
+        self.expected_prefix = new_prefix
         if documentation is not None:
             self.popup_is_ours = False
         self.old_prefix = prefix
