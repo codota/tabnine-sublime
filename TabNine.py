@@ -236,7 +236,7 @@ class TabNineListener(sublime_plugin.EventListener):
         def alnum_char_at(i):
             if i >= 0:
                 s = view.substr(sublime.Region(i, i+1))
-                if s.isalnum():
+                if s.isalnum() or s == '_':
                     return s
             return None
         offset = start
