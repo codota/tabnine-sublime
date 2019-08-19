@@ -29,7 +29,7 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
     def run(
         self, edit, *,
         region_begin, region_end, substitution, new_cursor_pos,
-        prefix, old_prefix, expected_prefix
+        prefix, old_prefix, expected_prefix, highlight
     ):
         normalize_offset = -self.view.sel()[0].begin()
         def normalize(x, sel):
@@ -68,17 +68,18 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
             self.view.insert(edit, t_region.begin(), substitution)
             self.view.sel().add(t_region.begin() + new_cursor_pos)
             modified_regions.append(sublime.Region(t_region.begin(), t_region.begin() + new_cursor_pos))
-        global GLOBAL_HIGHLIGHT_COUNTER
-        GLOBAL_HIGHLIGHT_COUNTER += 1
-        expected_counter = GLOBAL_HIGHLIGHT_COUNTER
-        self.view.add_regions(
-            'tabnine_highlight', modified_regions, 'string',
-            flags=sublime.DRAW_NO_OUTLINE,
-        )
-        def erase():
-            if GLOBAL_HIGHLIGHT_COUNTER == expected_counter:
-                self.view.erase_regions('tabnine_highlight')
-        sublime.set_timeout(erase, 250)
+        if highlight:
+            global GLOBAL_HIGHLIGHT_COUNTER
+            GLOBAL_HIGHLIGHT_COUNTER += 1
+            expected_counter = GLOBAL_HIGHLIGHT_COUNTER
+            self.view.add_regions(
+                'tabnine_highlight', modified_regions, 'string',
+                flags=sublime.DRAW_NO_OUTLINE,
+            )
+            def erase():
+                if GLOBAL_HIGHLIGHT_COUNTER == expected_counter:
+                    self.view.erase_regions('tabnine_highlight')
+            sublime.set_timeout(erase, 250)
 
 class TabNineListener(sublime_plugin.EventListener):
     def __init__(self):
@@ -376,6 +377,7 @@ class TabNineListener(sublime_plugin.EventListener):
             "prefix": prefix,
             "old_prefix": self.old_prefix,
             "expected_prefix": self.expected_prefix,
+            "highlight": self.get_settings().get("highlight"),
         }
         self.expected_prefix = new_prefix
         self.old_prefix = prefix

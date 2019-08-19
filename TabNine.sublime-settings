@@ -5,5 +5,8 @@
     "documentation": true,
 
     // Determines whether detail for each suggested result is shown next to the result in the popup.
-    "detail": true
+    "detail": true,
+
+    // Highlighting of selected suggestions
+    "highlight": true
 }
