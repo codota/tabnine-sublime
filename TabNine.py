@@ -1,20 +1,119 @@
 import sublime
 import sublime_plugin
 import html
-import subprocess
-import json
 import os
 import stat
 import webbrowser
 import time
+import json
+import subprocess
 
-AUTOCOMPLETE_CHAR_LIMIT = 100000
-MAX_RESTARTS = 10
 SETTINGS_PATH = 'TabNine.sublime-settings'
+MAX_RESTARTS = 10
+AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
 GLOBAL_HIGHLIGHT_COUNTER = 0
 
 GLOBAL_IGNORE_EVENTS = False
+
+
+def get_startup_info(platform):
+    if platform == "windows":
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        return si
+    else:
+        return None
+
+
+def get_tabnine_path(binary_dir):
+    def join_path(*args):
+        return os.path.join(binary_dir, *args)
+    translation = {
+        ("linux", "x32"): "i686-unknown-linux-musl/TabNine",
+        ("linux", "x64"): "x86_64-unknown-linux-musl/TabNine",
+        ("osx", "x32"): "i686-apple-darwin/TabNine",
+        ("osx", "x64"): "x86_64-apple-darwin/TabNine",
+        ("windows", "x32"): "i686-pc-windows-gnu/TabNine.exe",
+        ("windows", "x64"): "x86_64-pc-windows-gnu/TabNine.exe",
+    }
+    versions = os.listdir(binary_dir)
+    versions.sort(key=parse_semver, reverse=True)
+    for version in versions:
+        key = sublime.platform(), sublime.arch()
+        path = join_path(version, translation[key])
+        if os.path.isfile(path):
+            add_execute_permission(path)
+            print("TabNine: starting version", version)
+            return path
+
+
+class TabNineProcess:
+    def __init__(self):
+        self.tabnine_proc = None
+        self.num_restarts = 0
+        self.install_directory = os.path.dirname(os.path.realpath(__file__))
+
+        def on_change():
+            self.num_restarts = 0
+            self.restart_tabnine_proc()
+        sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
+
+    def restart_tabnine_proc(self):
+        if self.tabnine_proc is not None:
+            try:
+                self.tabnine_proc.terminate()
+            except Exception: #pylint: disable=W0703
+                pass
+        binary_dir = os.path.join(self.install_directory, "binaries")
+        settings = sublime.load_settings(SETTINGS_PATH)
+        tabnine_path = settings.get("custom_binary_path")
+        if tabnine_path is None:
+            tabnine_path = get_tabnine_path(binary_dir)
+        args = [tabnine_path, "--client", "sublime"]
+        log_file_path = settings.get("log_file_path")
+        if log_file_path is not None:
+            args += ["--log-file-path", log_file_path]
+        extra_args = settings.get("extra_args")
+        if extra_args is not None:
+            args += extra_args
+        self.tabnine_proc = subprocess.Popen(
+            args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            startupinfo=get_startup_info(sublime.platform()))
+
+    def request(self, req):
+        if self.tabnine_proc is None:
+            self.restart_tabnine_proc()
+        if self.tabnine_proc.poll():
+            print("TabNine subprocess is dead")
+            if self.num_restarts < MAX_RESTARTS:
+                print("Restarting it...")
+                self.num_restarts += 1
+                self.restart_tabnine_proc()
+            else:
+                return None
+        req = {
+            "version": "2.0.0",
+            "request": req
+        }
+        req = json.dumps(req)
+        req += '\n'
+        try:
+            self.tabnine_proc.stdin.write(bytes(req, "UTF-8"))
+            self.tabnine_proc.stdin.flush()
+            result = self.tabnine_proc.stdout.readline()
+            result = str(result, "UTF-8")
+            result = json.loads(result)
+            return result
+        except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
+            print("Exception while interacting with TabNine subprocess:", e)
+            if self.num_restarts < MAX_RESTARTS:
+                self.num_restarts += 1
+                self.restart_tabnine_proc()
+
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
@@ -81,6 +180,9 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
                     self.view.erase_regions('tabnine_highlight')
             sublime.set_timeout(erase, 250)
 
+
+tabnine_proc = TabNineProcess()
+
 class TabNineListener(sublime_plugin.EventListener):
     def __init__(self):
         self.before = ""
@@ -92,9 +194,6 @@ class TabNineListener(sublime_plugin.EventListener):
         self.choices = []
         self.substitute_interval = 0, 0
         self.actions_since_completion = 1
-        self.install_directory = os.path.dirname(os.path.realpath(__file__))
-        self.tabnine_proc = None
-        self.num_restarts = 0
         self.old_prefix = None
         self.popup_is_ours = False
         self.seen_changes = False
@@ -107,67 +206,8 @@ class TabNineListener(sublime_plugin.EventListener):
         self.expected_prefix = ""
         self.user_message = []
 
-        def on_change():
-            self.num_restarts = 0
-            self.restart_tabnine_proc()
-        sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
         sublime.load_settings(PREFERENCES_PATH).set('auto_complete', False)
         sublime.save_settings(PREFERENCES_PATH)
-
-    def restart_tabnine_proc(self):
-        if self.tabnine_proc is not None:
-            try:
-                self.tabnine_proc.terminate()
-            except Exception: #pylint: disable=W0703
-                pass
-        binary_dir = os.path.join(self.install_directory, "binaries")
-        settings = sublime.load_settings(SETTINGS_PATH)
-        tabnine_path = settings.get("custom_binary_path")
-        if tabnine_path is None:
-            tabnine_path = get_tabnine_path(binary_dir)
-        args = [tabnine_path, "--client", "sublime"]
-        log_file_path = settings.get("log_file_path")
-        if log_file_path is not None:
-            args += ["--log-file-path", log_file_path]
-        extra_args = settings.get("extra_args")
-        if extra_args is not None:
-            args += extra_args
-        self.tabnine_proc = subprocess.Popen(
-            args,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            startupinfo=get_startup_info(sublime.platform()))
-
-    def request(self, req):
-        if self.tabnine_proc is None:
-            self.restart_tabnine_proc()
-        if self.tabnine_proc.poll():
-            print("TabNine subprocess is dead")
-            if self.num_restarts < MAX_RESTARTS:
-                print("Restarting it...")
-                self.num_restarts += 1
-                self.restart_tabnine_proc()
-            else:
-                return None
-        req = {
-            "version": "2.0.0",
-            "request": req
-        }
-        req = json.dumps(req)
-        req += '\n'
-        try:
-            self.tabnine_proc.stdin.write(bytes(req, "UTF-8"))
-            self.tabnine_proc.stdin.flush()
-            result = self.tabnine_proc.stdout.readline()
-            result = str(result, "UTF-8")
-            result = json.loads(result)
-            return result
-        except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
-            print("Exception while interacting with TabNine subprocess:", e) 
-            if self.num_restarts < MAX_RESTARTS:
-                self.num_restarts += 1
-                self.restart_tabnine_proc()
 
     def get_before(self, view, char_limit):
         loc = view.sel()[0].begin()
@@ -194,7 +234,7 @@ class TabNineListener(sublime_plugin.EventListener):
                     "filename": file_name
                 }
             }
-            self.request(request)
+            tabnine_proc.request(request)
 
     def on_any_event(self, view):
         if view.window() is None:
@@ -291,7 +331,7 @@ class TabNineListener(sublime_plugin.EventListener):
                 "max_num_results": max_num_results,
             }
         }
-        response = self.request(request)
+        response = tabnine_proc.request(request)
         if response is None or not self.autocompleting:
             return
         self.tab_index = 0
@@ -424,14 +464,6 @@ class TabNineListener(sublime_plugin.EventListener):
             assert operator == sublime.OP_EQUAL
             return (self.choices != []) == operand
 
-def get_startup_info(platform):
-    if platform == "windows":
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        return si
-    else:
-        return None
-
 def escape(s):
     s = html.escape(s, quote=False)
     s = s.replace(" ", "&nbsp;")
@@ -496,29 +528,18 @@ def my_show_popup(view, content, location, markdown=None):
         )
     GLOBAL_IGNORE_EVENTS = False
 
-def get_tabnine_path(binary_dir):
-    def join_path(*args):
-        return os.path.join(binary_dir, *args)
-    translation = {
-        ("linux", "x32"): "i686-unknown-linux-musl/TabNine",
-        ("linux", "x64"): "x86_64-unknown-linux-musl/TabNine",
-        ("osx", "x32"): "i686-apple-darwin/TabNine",
-        ("osx", "x64"): "x86_64-apple-darwin/TabNine",
-        ("windows", "x32"): "i686-pc-windows-gnu/TabNine.exe",
-        ("windows", "x64"): "x86_64-pc-windows-gnu/TabNine.exe",
-    }
-    versions = os.listdir(binary_dir)
-    versions.sort(key=parse_semver, reverse=True)
-    for version in versions:
-        key = sublime.platform(), sublime.arch()
-        path = join_path(version, translation[key])
-        if os.path.isfile(path):
-            add_execute_permission(path)
-            print("TabNine: starting version", version)
-            return path
-
 def add_execute_permission(path):
     st = os.stat(path)
     new_mode = st.st_mode | stat.S_IEXEC
     if new_mode != st.st_mode:
         os.chmod(path, new_mode)
+
+
+class OpenconfigCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        request = {
+            "Configuration": {
+            }
+        }
+
+        response = tabnine_proc.request(request)

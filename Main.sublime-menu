@@ -38,11 +38,19 @@
                                 "args": {
                                     "file": "${packages}/User/Default.sublime-keymap"
                                 }
+                            },
+                            {
+                                "caption": "-"
+                            },
+                            {
+                                "id" : "example",
+                                "caption" : "Open TabNine Configuration",
+                                "command" : "openconfig"
                             }
                         ]
                     }
                 ]
-            }
+            },
         ]
     }
 ]
