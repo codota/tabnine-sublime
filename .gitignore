@@ -1,6 +1,8 @@
 binaries/*
 !binaries/2.5.1
 
+**.DS_Store
+
 registration_key
 sig
 auth
