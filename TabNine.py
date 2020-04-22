@@ -470,7 +470,7 @@ def escape(s):
     urls = [
         ('https://tabnine.com/semantic', None, 'tabnine.com/semantic'),
         ('tabnine.com/semantic', 'https://tabnine.com/semantic', 'tabnine.com/semantic'),
-        ('tabnine.com', 'https://tabnine.com', 'tabnine.com', 'www.tabnine.com/buy'),
+        ('tabnine.com', 'https://tabnine.com', 'tabnine.com', 'tabnine.com/buy', 'www.tabnine.com/buy'),
     ]
     for url, navigate_to, display in urls:
         if url in s:
