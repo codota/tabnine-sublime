@@ -470,13 +470,15 @@ def escape(s):
     urls = [
         ('https://tabnine.com/semantic', None, 'tabnine.com/semantic'),
         ('tabnine.com/semantic', 'https://tabnine.com/semantic', 'tabnine.com/semantic'),
-        ('tabnine.com', 'https://tabnine.com', 'tabnine.com', 'tabnine.com/buy', 'www.tabnine.com/buy'),
+        ('www.tabnine.com/buy', 'https://tabnine.com/buy', 'tabnine.com/buy'),
+        ('tabnine.com', 'https://tabnine.com', 'tabnine.com'),
+        
     ]
     for url, navigate_to, display in urls:
         if url in s:
             if navigate_to is None:
                 navigate_to = url
-            s = s.replace(html.escape(url), '<a href="{}">{}</a>'.format(url, display))
+            s = s.replace(html.escape(url), '<a href="{}">{}</a>'.format(navigate_to, display))
             break
     return s
 
