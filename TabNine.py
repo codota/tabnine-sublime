@@ -53,13 +53,14 @@ class TabNineProcess:
         self.tabnine_proc = None
         self.num_restarts = 0
         self.install_directory = os.path.dirname(os.path.realpath(__file__))
+        self.uninstalled = False
 
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
 
-    def restart_tabnine_proc(self):
+    def restart_tabnine_proc(self, inheritStdio=False, additionalArgs=[]):
         if self.tabnine_proc is not None:
             try:
                 self.tabnine_proc.terminate()
@@ -70,7 +71,7 @@ class TabNineProcess:
         tabnine_path = settings.get("custom_binary_path")
         if tabnine_path is None:
             tabnine_path = get_tabnine_path(binary_dir)
-        args = [tabnine_path, "--client", "sublime"]
+        args = [tabnine_path, "--client", "sublime"] + additionalArgs
         log_file_path = settings.get("log_file_path")
         if log_file_path is not None:
             args += ["--log-file-path", log_file_path]
@@ -79,12 +80,14 @@ class TabNineProcess:
             args += extra_args
         self.tabnine_proc = subprocess.Popen(
             args,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+            stdin=None if inheritStdio else subprocess.PIPE,
+            stdout=None if inheritStdio else subprocess.PIPE,
             stderr=subprocess.STDOUT,
             startupinfo=get_startup_info(sublime.platform()))
 
     def request(self, req):
+        if self.uninstalled:
+            return None
         if self.tabnine_proc is None:
             self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
@@ -114,6 +117,9 @@ class TabNineProcess:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
 
+    def handle_uninstall(self):
+        self.uninstalled = True
+        self.restart_tabnine_proc(True, ['--uninstalled'])
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
@@ -543,3 +549,9 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
         }
 
         response = tabnine_proc.request(request)
+
+def plugin_unloaded():
+    from package_control import events
+
+    if events.remove('TabNine'):
+        tabnine_proc.handle_uninstall()
