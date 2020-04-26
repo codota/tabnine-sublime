@@ -49,24 +49,19 @@ def get_tabnine_path(binary_dir):
 
 
 class TabNineProcess:
+    install_directory = os.path.dirname(os.path.realpath(__file__))
     def __init__(self):
         self.tabnine_proc = None
         self.num_restarts = 0
-        self.install_directory = os.path.dirname(os.path.realpath(__file__))
-        self.uninstalled = False
 
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
 
-    def restart_tabnine_proc(self, inheritStdio=False, additionalArgs=[]):
-        if self.tabnine_proc is not None:
-            try:
-                self.tabnine_proc.terminate()
-            except Exception: #pylint: disable=W0703
-                pass
-        binary_dir = os.path.join(self.install_directory, "binaries")
+    @staticmethod
+    def run_tabnine(inheritStdio=False, additionalArgs=[]):
+        binary_dir = os.path.join(TabNineProcess.install_directory, "binaries")
         settings = sublime.load_settings(SETTINGS_PATH)
         tabnine_path = settings.get("custom_binary_path")
         if tabnine_path is None:
@@ -78,16 +73,22 @@ class TabNineProcess:
         extra_args = settings.get("extra_args")
         if extra_args is not None:
             args += extra_args
-        self.tabnine_proc = subprocess.Popen(
+        return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,
             stdout=None if inheritStdio else subprocess.PIPE,
             stderr=subprocess.STDOUT,
             startupinfo=get_startup_info(sublime.platform()))
 
+    def restart_tabnine_proc(self):
+        if self.tabnine_proc is not None:
+            try:
+                self.tabnine_proc.terminate()
+            except Exception: #pylint: disable=W0703
+                pass
+        self.tabnine_proc = TabNineProcess.run_tabnine()
+
     def request(self, req):
-        if self.uninstalled:
-            return None
         if self.tabnine_proc is None:
             self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
@@ -116,10 +117,6 @@ class TabNineProcess:
             if self.num_restarts < MAX_RESTARTS:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
-
-    def handle_uninstall(self):
-        self.uninstalled = True
-        self.restart_tabnine_proc(True, ['--uninstalled'])
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
@@ -556,4 +553,4 @@ def plugin_unloaded():
     from package_control import events
 
     if events.remove('TabNine'):
-        tabnine_proc.handle_uninstall()
+        TabNineProcess.run_tabnine(True, ['--uninstalled'])
