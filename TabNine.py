@@ -49,15 +49,36 @@ def get_tabnine_path(binary_dir):
 
 
 class TabNineProcess:
+    install_directory = os.path.dirname(os.path.realpath(__file__))
     def __init__(self):
         self.tabnine_proc = None
         self.num_restarts = 0
-        self.install_directory = os.path.dirname(os.path.realpath(__file__))
 
         def on_change():
             self.num_restarts = 0
             self.restart_tabnine_proc()
         sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
+
+    @staticmethod
+    def run_tabnine(inheritStdio=False, additionalArgs=[]):
+        binary_dir = os.path.join(TabNineProcess.install_directory, "binaries")
+        settings = sublime.load_settings(SETTINGS_PATH)
+        tabnine_path = settings.get("custom_binary_path")
+        if tabnine_path is None:
+            tabnine_path = get_tabnine_path(binary_dir)
+        args = [tabnine_path, "--client", "sublime"] + additionalArgs
+        log_file_path = settings.get("log_file_path")
+        if log_file_path is not None:
+            args += ["--log-file-path", log_file_path]
+        extra_args = settings.get("extra_args")
+        if extra_args is not None:
+            args += extra_args
+        return subprocess.Popen(
+            args,
+            stdin=None if inheritStdio else subprocess.PIPE,
+            stdout=None if inheritStdio else subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            startupinfo=get_startup_info(sublime.platform()))
 
     def restart_tabnine_proc(self):
         if self.tabnine_proc is not None:
@@ -65,24 +86,7 @@ class TabNineProcess:
                 self.tabnine_proc.terminate()
             except Exception: #pylint: disable=W0703
                 pass
-        binary_dir = os.path.join(self.install_directory, "binaries")
-        settings = sublime.load_settings(SETTINGS_PATH)
-        tabnine_path = settings.get("custom_binary_path")
-        if tabnine_path is None:
-            tabnine_path = get_tabnine_path(binary_dir)
-        args = [tabnine_path, "--client", "sublime"]
-        log_file_path = settings.get("log_file_path")
-        if log_file_path is not None:
-            args += ["--log-file-path", log_file_path]
-        extra_args = settings.get("extra_args")
-        if extra_args is not None:
-            args += extra_args
-        self.tabnine_proc = subprocess.Popen(
-            args,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            startupinfo=get_startup_info(sublime.platform()))
+        self.tabnine_proc = TabNineProcess.run_tabnine()
 
     def request(self, req):
         if self.tabnine_proc is None:
@@ -113,7 +117,6 @@ class TabNineProcess:
             if self.num_restarts < MAX_RESTARTS:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
-
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
@@ -545,3 +548,9 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
         }
 
         response = tabnine_proc.request(request)
+
+def plugin_unloaded():
+    from package_control import events
+
+    if events.remove('TabNine'):
+        TabNineProcess.run_tabnine(True, ['--uninstalled'])
