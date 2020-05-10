@@ -7,6 +7,7 @@ import webbrowser
 import time
 import json
 import subprocess
+from package_control import package_manager
 
 SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10
@@ -50,6 +51,7 @@ def get_tabnine_path(binary_dir):
 
 class TabNineProcess:
     install_directory = os.path.dirname(os.path.realpath(__file__))
+    pack_manager = package_manager.PackageManager()
     def __init__(self):
         self.tabnine_proc = None
         self.num_restarts = 0
@@ -73,6 +75,10 @@ class TabNineProcess:
         extra_args = settings.get("extra_args")
         if extra_args is not None:
             args += extra_args
+        plugin_version = TabNineProcess.pack_manager.get_metadata("TabNine").get('version')
+        if not plugin_version:
+            plugin_version = "Unknown"
+        args += ["--client-metadata", "clientVersion=" + sublime.version(), "pluginVersion=" + plugin_version]
         return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,
