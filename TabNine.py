@@ -79,7 +79,8 @@ class TabNineProcess:
         plugin_version = PACK_MANAGER.get_metadata("TabNine").get('version')
         if not plugin_version:
             plugin_version = "Unknown"
-        args += ["--client-metadata", "clientVersion=" + sublime.version(), "pluginVersion=" + plugin_version]
+        sublime_version = sublime.version()
+        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version]
         return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,
