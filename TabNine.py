@@ -17,6 +17,8 @@ GLOBAL_HIGHLIGHT_COUNTER = 0
 
 GLOBAL_IGNORE_EVENTS = False
 
+PACK_MANAGER = package_manager.PackageManager()
+
 
 def get_startup_info(platform):
     if platform == "windows":
@@ -51,7 +53,6 @@ def get_tabnine_path(binary_dir):
 
 class TabNineProcess:
     install_directory = os.path.dirname(os.path.realpath(__file__))
-    pack_manager = package_manager.PackageManager()
     def __init__(self):
         self.tabnine_proc = None
         self.num_restarts = 0
@@ -75,7 +76,7 @@ class TabNineProcess:
         extra_args = settings.get("extra_args")
         if extra_args is not None:
             args += extra_args
-        plugin_version = TabNineProcess.pack_manager.get_metadata("TabNine").get('version')
+        plugin_version = PACK_MANAGER.get_metadata("TabNine").get('version')
         if not plugin_version:
             plugin_version = "Unknown"
         args += ["--client-metadata", "clientVersion=" + sublime.version(), "pluginVersion=" + plugin_version]
