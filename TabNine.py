@@ -7,6 +7,7 @@ import webbrowser
 import time
 import json
 import subprocess
+from package_control import package_manager
 
 SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10
@@ -15,6 +16,8 @@ PREFERENCES_PATH = 'Preferences.sublime-settings'
 GLOBAL_HIGHLIGHT_COUNTER = 0
 
 GLOBAL_IGNORE_EVENTS = False
+
+PACK_MANAGER = package_manager.PackageManager()
 
 
 def get_startup_info(platform):
@@ -73,6 +76,11 @@ class TabNineProcess:
         extra_args = settings.get("extra_args")
         if extra_args is not None:
             args += extra_args
+        plugin_version = PACK_MANAGER.get_metadata("TabNine").get('version')
+        if not plugin_version:
+            plugin_version = "Unknown"
+        sublime_version = sublime.version()
+        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version]
         return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,
