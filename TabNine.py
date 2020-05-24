@@ -561,4 +561,4 @@ def plugin_unloaded():
     from package_control import events
 
     if events.remove('TabNine'):
-        TabNineProcess.run_tabnine(True, ['--uninstalled'])
+        TabNineProcess.run_tabnine(True, ['--uninstalling'])
