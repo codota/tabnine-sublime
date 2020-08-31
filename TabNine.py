@@ -8,6 +8,7 @@ import time
 import json
 import subprocess
 from package_control import package_manager
+from threading import Timer
 
 SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10
@@ -211,7 +212,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.no_hide_until = time.time()
         self.just_pressed_tab = False
         self.tab_only = False
-
+        self.timer = None
         self.tab_index = 0
         self.old_prefix = None
         self.expected_prefix = ""
@@ -320,15 +321,19 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def get_settings(self):
         return sublime.load_settings(SETTINGS_PATH)
+    def get_preferences(self):
+        return sublime.load_settings(PREFERENCES_PATH)
 
     def max_num_results(self):
         return self.get_settings().get("max_num_results")
 
     def on_selection_modified_async(self, view):
         if view.window() is None:
+            self.clear_delay_timer()
             return
         view = view.window().active_view()
         if not self.autocompleting:
+            self.clear_delay_timer()
             return
         self.just_pressed_tab = False
         max_num_results = self.max_num_results()
@@ -344,6 +349,7 @@ class TabNineListener(sublime_plugin.EventListener):
         }
         response = tabnine_proc.request(request)
         if response is None or not self.autocompleting:
+            self.clear_delay_timer()
             return
         self.tab_index = 0
         self.old_prefix = None
@@ -361,11 +367,40 @@ class TabNineListener(sublime_plugin.EventListener):
 
         if self.choices == []:
             view.hide_popup()
+            self.clear_delay_timer()
         else:
-            my_show_popup(view, to_show, substitute_begin)
-            self.popup_is_ours = True
-            self.seen_changes = False
+            if view.is_popup_visible():
+                self.show_competion_dialog(view, to_show, substitute_begin)
+            else:  
+                self.clear_delay_timer()
+                
+                auto_complete_delay = self.get_auto_complete_delay()
 
+                if auto_complete_delay >= 1:
+                    self.delay_competion_dialog(auto_complete_delay, view, to_show, substitute_begin)
+                else: 
+                    self.show_competion_dialog(view, to_show, substitute_begin)
+
+    def show_competion_dialog(self, view, to_show, substitute_begin):
+        my_show_popup(view, to_show, substitute_begin)
+        self.popup_is_ours = True
+        self.seen_changes = False
+
+    def delay_competion_dialog(self, auto_complete_delay, view, to_show, substitute_begin):
+        self.timer = Timer(auto_complete_delay, self.show_competion_dialog, [view, to_show, substitute_begin])
+        self.timer.start()
+
+    def clear_delay_timer(self) :
+        if self.timer is not None:
+            self.timer.cancel()
+
+    def get_auto_complete_delay(self) :
+        auto_complete_delay_millis = self.get_preferences().get('auto_complete_delay')
+        auto_complete_delay_sec = 0
+        if auto_complete_delay_millis is not None:
+            auto_complete_delay_sec = (auto_complete_delay_millis/1000)%60
+        return auto_complete_delay_sec
+        
     def make_popup_content(self, index):
         to_show = [choice["new_prefix"] for choice in self.choices]
         max_len = max([len(x) for x in to_show] or [0])
