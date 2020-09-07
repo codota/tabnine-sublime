@@ -12,7 +12,7 @@ This is the Sublime Text client for [TabNine](https://tabnine.com), advanced AI 
 
 TabNine is part of [Codota](https://www.codota.com/) 
 
-<img src="./assets/tabnine.gif" height="300" style="border-radius: 4px" />
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/tabnine.gif" height="300" style="border-radius: 4px" />
 
 
 ### **Deep Completion:**
