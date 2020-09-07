@@ -1,5 +1,5 @@
 binaries/*
-!binaries/2.9.2
+!binaries/3.0.7
 
 **.DS_Store
 
