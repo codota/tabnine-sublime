@@ -1,3 +1,6 @@
+binaries/*
+!binaries/3.0.7
+
 **.DS_Store
 
 registration_key
