@@ -1,4 +1,5 @@
 {
     // We suppress the default autocompletion popup because it's confusing to have two popups.
-    "auto_complete": false
+    "auto_complete": true,
+    "auto_complete_triggers": [{"selector": "source - string - comment - constant.numeric", "characters": ". qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP"}],
 }
