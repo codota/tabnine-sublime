@@ -14,6 +14,7 @@ SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
+KEY_MAP = "Default.sublime-keymap"
 GLOBAL_HIGHLIGHT_COUNTER = 0
 
 GLOBAL_IGNORE_EVENTS = False
@@ -137,16 +138,25 @@ class TabNineReverseLeaderKeyCommand(TabNineCommand):
     pass
 
 class SubstituteCommand(sublime_plugin.TextCommand):
-    def run(self, edit, begin, end):   
-        print("substitute" + str(begin) + " " + str(end))
+    def run(self, edit, begin, end):
         self.view.erase(edit, sublime.Region(begin, end))
+
+class TabCompletionCommand(sublime_plugin.TextCommand):
+    def run(self, edit, completion_request_location):
+        print("================================================================================================")
+        print("completion_request_location " + str(completion_request_location))
+        print("existing completion" + self.view.substr(sublime.Region(completion_request_location, self.view.sel()[0].begin())))
+        self.view.erase(edit, sublime.Region(completion_request_location, self.view.sel()[0].begin()))
+        self.view.run_command("auto_complete")
+        self.view.run_command("commit_completion")
+        # self.view.run_command("move", {"by": "lines", "forward": True})
+
 class TabNineSubstituteCommand(sublime_plugin.TextCommand):
     def run(
         self, edit, *,
         region_begin, region_end, substitution, new_cursor_pos,
         prefix, old_prefix, expected_prefix, highlight
     ):
-        print("in TabNineSubstituteCommand")
         normalize_offset = -self.view.sel()[0].begin()
         def normalize(x, sel):
             if isinstance(x, sublime.Region):
@@ -224,9 +234,17 @@ class TabNineListener(sublime_plugin.EventListener):
         self.user_message = []
         self.current_sel = 0
         self.results = []
+        self.completion_request_location = 0
 
-        # sublime.load_settings(PREFERENCES_PATH).set('auto_complete', False)
-        sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{"selector": "source - string - comment - constant.numeric", "characters": ". qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP"}])
+        sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
+        sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
+			"characters": "(){}[],:\'\"=<>/\\+-|&*%=$#@! qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+			"selector": "source - string - constant.numeric"
+		},
+		{
+			"characters": " qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+			"selector": "text - string - comment - constant.numeric"
+		}])
         sublime.save_settings(PREFERENCES_PATH)
 
     def get_before(self, view, char_limit):
@@ -247,6 +265,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.on_any_event(view)
 
     def on_query_completions(self, view, prefix, locations):
+        self.completion_request_location = locations[0]
         request = {
             "Autocomplete": {
                 "before": self.before,
@@ -257,21 +276,11 @@ class TabNineListener(sublime_plugin.EventListener):
                 "max_num_results": 5,
             }
         }
-        print("tabnine request")
-        print( json.dumps(request))
         response = tabnine_proc.request(request)
         self.results = response["results"]
         self.choices = self.results
         self.expected_prefix = response["old_prefix"]
         self.user_message = response["user_message"]
-        print("tabnine response")
-        print( json.dumps(response))
-        # for c in response["results"]: 
-        #     print( json.dumps(c)) 
-
-        # r.get("new_prefix")
-        # view.show_popup_menu(["test"], lambda index: print("show popup on done" + index))
-        print("locations" +  str(locations).strip('[]'))
         if response.get("results") is not None:
             view.show_popup(
                 "<div>" + "<br>".join(response.get("user_message", ["this is my test"])) + "</div>",
@@ -282,10 +291,6 @@ class TabNineListener(sublime_plugin.EventListener):
                 on_navigate=webbrowser.open,
             )
         completions = list(map(lambda r: [ r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "") ], response.get("results")))
-        print("completions")
-        print( json.dumps(completions))
-        print("prefix" + prefix)
-        print("on_query_completions")
         return (completions, 0)
         # return [
         #     [prefix + "yes" + "\t test", "def ${1:name}($2) { $0 }"]
@@ -402,7 +407,6 @@ class TabNineListener(sublime_plugin.EventListener):
         #     }
         # }
         # response = tabnine_proc.request(request)
-        print("in selection modified")
         if not self.autocompleting:
             self.clear_delay_timer()
             return
@@ -546,28 +550,19 @@ class TabNineListener(sublime_plugin.EventListener):
         return [self.copy_region(r) for r in regions]
 
     def on_post_text_command(self, view, command_name, args):
-         if command_name == "commit_completion":
+        # replace_completion_with_next_completion
+         if command_name in [ "commit_completion", "insert_best_completion"] :
             
-            print("on_post_text_command")
             current_position = self.copy_regions(view.sel())[0].end()
             previous_position = self.current_sel
             end_of_line = view.line(sublime.Region(current_position, current_position))
-            print("line" + str(end_of_line.begin()) + str(end_of_line.end()))
             substitution = view.substr(sublime.Region(previous_position, current_position))
-            print("substitution" + substitution)
             existing_choice = next((x for x in self.results if x["new_prefix"] == substitution), None)
             if existing_choice is not None:
-                print("new_suffix", existing_choice["new_suffix"])
                 current_position += len(existing_choice["new_suffix"])
                 if existing_choice["old_suffix"] is not "":
                     new_position = min(current_position + (current_position - previous_position), end_of_line.end())
-                    print("current_position" + str(current_position))
-                    print("previous_position" + str(previous_position))
-                    print("new_position" + str(new_position))
-
-                    print("substr")
                     # sublime.Region(current_position, new_position)
-                    print(view.substr(sublime.Region(current_position, new_position)))
                     new_args = {
                         "begin": current_position,
                         "end": new_position
@@ -577,14 +572,16 @@ class TabNineListener(sublime_plugin.EventListener):
             # view.erase(edit, sublime.Region(current_position, new_position))
 
     def on_text_command(self, view, command_name, args):
-        
-        
-        if command_name == "commit_completion" :
+        # if command_name in ["tab_nine_leader_key", "tab_nine"]:
+        #     return "insert_best_completion"
+        # if command_name =="tab_nine_leader_key":
+        #     return "tab_completion", { "completion_request_location": self.completion_request_location }
+
+        # replace_completion_with_next_completion
+        if command_name in [ "commit_completion", "insert_best_completion"] :
             self.current_sel = self.copy_regions(view.sel())[0].begin()
-            
-            print("commit_completion")
-            print(self.current_sel)
-            
+            return
+
         if command_name == "tab_nine" and "num" in args:
             num = args["num"]
             choice_index = num - 1
@@ -603,14 +600,17 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_query_context(self, view, key, operator, operand, match_all): #pylint: disable=W0613
         if key == "tab_nine_choice_available":
-            assert operator == sublime.OP_EQUAL
-            return self.just_pressed_tab and operand <= len(self.choices) and not self.tab_only and operand != 1
+            # assert operator == sublime.OP_EQUAL
+            # return self.just_pressed_tab and operand <= len(self.choices) and not self.tab_only and operand != 1
+            return False
         if key == "tab_nine_leader_key_available":
-            assert operator == sublime.OP_EQUAL
-            return (self.choices != [] and view.is_popup_visible()) == operand
+            return False
+            # assert operator == sublime.OP_EQUAL
+            # return (self.choices != [] and view.is_popup_visible()) == operand
         if key == "tab_nine_reverse_leader_key_available":
-            assert operator == sublime.OP_EQUAL
-            return (self.choices != []) == operand
+            return False
+            # assert operator == sublime.OP_EQUAL
+            # return (self.choices != []) == operand
 
 def escape(s):
     s = html.escape(s, quote=False)
