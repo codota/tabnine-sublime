@@ -5,7 +5,7 @@ import webbrowser
 import time
 import json
 
-from threading import Timer
+
 from ..TabNineProcess import tabnine_proc
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
@@ -55,7 +55,7 @@ class TabNineListener(sublime_plugin.EventListener):
             sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
             sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
                 "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
-                "selector": "source.python - constant.numeric"
+                "selector": "source.python"
             },
             {
                 "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
@@ -86,7 +86,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.on_any_event(view)
     def on_activated(self, view):
         self.on_any_event(view)
-        view.set_status('tabnine', "test")
+        view.window().status_message("TabNine")
 
         
     def on_query_completions(self, view, prefix, locations):
@@ -106,24 +106,25 @@ class TabNineListener(sublime_plugin.EventListener):
                     }
                 }
 
-
                 response = tabnine_proc.request(request)
                 print("================================================================")
-                print("request", json.dumps(response))
+                print("response", json.dumps(response))
                 self._expected_prefix = response["old_prefix"]
                 self._results = response["results"]
                 self._user_message = response["user_message"]
-                if self._results and self._user_message and not view.is_popup_visible():
-                    view.show_popup(
-                        "<div>" + "<br>".join(self._user_message) + "</div>",
-                        sublime.COOPERATE_WITH_AUTO_COMPLETE | sublime.HIDE_ON_MOUSE_MOVE,
-                        location=locations[0],
-                        max_width=500,
-                        max_height=1200,
-                        on_navigate=webbrowser.open,
-                    )
-                if not self._results and view.is_popup_visible():
-                    view.hide_popup()
+                if self._results and self._user_message and view.window():
+                    view.window().status_message(" ".join(self._user_message))
+                    # view.show_popup(
+                    #     '<div style="font-size: 10px">' + "<br>".join(self._user_message) + "</div>",
+                    #     sublime.COOPERATE_WITH_AUTO_COMPLETE | sublime.HIDE_ON_MOUSE_MOVE,
+                    #     location=locations[0] - 200,
+                    #     max_width=500,
+                    #     max_height=1200,
+                    #     on_navigate=webbrowser.open,
+                    # )
+                else :
+                    view.window().status_message("TabNine")
+                    
                 view.run_command('hide_auto_complete')
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
@@ -131,7 +132,6 @@ class TabNineListener(sublime_plugin.EventListener):
                     'next_completion_if_showing': True
                 })
             sublime.set_timeout_async(run_complete, 0)
-            view.hide_popup()
             print("in empty async request", prefix)
             return []
         if self._last_location == locations[0]:
@@ -139,9 +139,8 @@ class TabNineListener(sublime_plugin.EventListener):
             print("in sync", prefix)
             completions = [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
             print("completions", completions)
-            if not completions:
-                view.hide_popup()
-            return completions
+            
+            return (completions, 0)
 
     def on_activated_async(self, view):
         file_name = view.file_name()
@@ -246,7 +245,7 @@ class TabNineListener(sublime_plugin.EventListener):
         if command_name in [ "commit_completion", "insert_best_completion"] :
             # self._current_location = view.sel()[0].begin()
             print("in text command", view.substr(view.line(self._current_location)))
-            view.hide_popup()
+            
             return
 
     def on_query_context(self, view, key, operator, operand, match_all): #pylint: disable=W0613
