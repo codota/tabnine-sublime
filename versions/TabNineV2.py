@@ -5,15 +5,11 @@ import webbrowser
 import time
 import json
 
-
 from ..TabNineProcess import tabnine_proc
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
-
-GLOBAL_HIGHLIGHT_COUNTER = 0
-
-GLOBAL_IGNORE_EVENTS = False
+COMPLEATIONS_REQUEST_TRESHOLD = 1
 
 
 class TabNineCommand(sublime_plugin.TextCommand):
@@ -24,10 +20,11 @@ class TabNineLeaderKeyCommand(TabNineCommand):
     pass
 class TabNineReverseLeaderKeyCommand(TabNineCommand):
     pass
+class SpaceCompletion(TabNineCommand):
+    pass
 
-class SubstituteCommand(sublime_plugin.TextCommand):
+class TabNinePostSubstitutionCommand(sublime_plugin.TextCommand):
     def run(self, edit, begin, end, old_suffix):
-        print("in substitution", self.view.substr(sublime.Region(begin, end)))
         if old_suffix in self.view.substr(sublime.Region(begin, end)):
             self.view.erase(edit, sublime.Region(begin, end))
 
@@ -38,27 +35,21 @@ class TabNineListener(sublime_plugin.EventListener):
         self.after = ""
         self.region_includes_beginning = False
         self.region_includes_end = False
-        self.before_begin_location = 0
-        self.autocompleting = False
-        self.actions_since_completion = 1
-        self.seen_changes = False
-        self._current_location = 0
+        self._last_query_location = 0
         self._user_message = []
         self._last_location = None
         self._results = []
         self._completion_prefix = ""
-        self._expected_prefix = ""
+        self._stop_completion = True
 
- 
-        def update_settings():
-            print("before update settings")
+        def _update_settings():
             sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
             sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
-                "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+                "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",
                 "selector": "source.python"
             },
             {
-                "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+                "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! ",
                 "selector": "source & - source.python - constant.numeric"
             },
             {
@@ -67,34 +58,51 @@ class TabNineListener(sublime_plugin.EventListener):
             }])
             sublime.save_settings(PREFERENCES_PATH)
 
-        sublime.set_timeout(update_settings, 250)
+        sublime.set_timeout(_update_settings, 250)
 
 
     def get_before(self, view, char_limit):
         loc = view.sel()[0].begin()
         begin = max(0, loc - char_limit)
-        return view.substr(sublime.Region(begin, loc)), begin == 0, loc
+        return view.substr(sublime.Region(begin, loc)), begin == 0
     def get_after(self, view, char_limit):
         loc = view.sel()[0].end()
         end = min(view.size(), loc + char_limit)
         return view.substr(sublime.Region(loc, end)), end == view.size()
 
     def on_modified(self, view):
-        self.seen_changes = True
         self.on_any_event(view)
+
+        view_sel = view.sel()
+        if not view_sel:
+            return
+
+        current_location = view_sel[0].end()
+
+        def _run_compete():
+            view.run_command('hide_auto_complete')
+            view.run_command('auto_complete', {
+                    'api_completions_only': False,
+                    'disable_auto_insert':  True,
+                    'next_completion_if_showing': False
+            })
+        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion:
+            sublime.set_timeout_async(_run_compete, 0)
+
+        self._stop_completion = None
     def on_selection_modified(self, view):
         self.on_any_event(view)
     def on_activated(self, view):
         self.on_any_event(view)
         view.window().status_message("TabNine")
-
         
     def on_query_completions(self, view, prefix, locations):
-        self._current_location = locations[0]
+        self._last_query_location = locations[0]
         self._completion_prefix = prefix
         if self._last_location != locations[0]:
+            temp_location = self._last_location
             self._last_location = locations[0]
-            def run_complete():
+            def _run_complete():
                 request = {
                     "Autocomplete": {
                         "before": self.before,
@@ -105,42 +113,33 @@ class TabNineListener(sublime_plugin.EventListener):
                         "max_num_results": 5,
                     }
                 }
-
                 response = tabnine_proc.request(request)
-                print("================================================================")
-                print("response", json.dumps(response))
-                self._expected_prefix = response["old_prefix"]
                 self._results = response["results"]
                 self._user_message = response["user_message"]
                 if self._results and self._user_message and view.window():
                     view.window().status_message(" ".join(self._user_message))
-                    # view.show_popup(
-                    #     '<div style="font-size: 10px">' + "<br>".join(self._user_message) + "</div>",
-                    #     sublime.COOPERATE_WITH_AUTO_COMPLETE | sublime.HIDE_ON_MOUSE_MOVE,
-                    #     location=locations[0] - 200,
-                    #     max_width=500,
-                    #     max_height=1200,
-                    #     on_navigate=webbrowser.open,
-                    # )
-                else :
+                elif view.window():
                     view.window().status_message("TabNine")
-                    
-                view.run_command('hide_auto_complete')
+                   
+                
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
-                    'disable_auto_insert': True,
-                    'next_completion_if_showing': True
+                    'disable_auto_insert':  True,
+                    'next_completion_if_showing': False
                 })
-            sublime.set_timeout_async(run_complete, 0)
-            print("in empty async request", prefix)
-            return []
+                
+            view.run_command('hide_auto_complete')
+            sublime.set_timeout_async(_run_complete, 0)
+
+            return ([], sublime.INHIBIT_WORD_COMPLETIONS)
         if self._last_location == locations[0]:
             self._last_location = None
-            print("in sync", prefix)
             completions = [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
-            print("completions", completions)
-            
-            return (completions, 0)
+
+            flags = sublime.INHIBIT_WORD_COMPLETIONS
+            if len(completions):
+                flags = 0
+            return (completions, flags)
 
     def on_activated_async(self, view):
         file_name = view.file_name()
@@ -156,34 +155,17 @@ class TabNineListener(sublime_plugin.EventListener):
         if view.window() is None:
             return
         view = view.window().active_view()
-        if view.is_scratch() or GLOBAL_IGNORE_EVENTS:
+        if view.is_scratch():
             return
         (
             new_before,
             self.region_includes_beginning,
-            self.before_begin_location,
         ) = self.get_before(view, AUTOCOMPLETE_CHAR_LIMIT)
         new_after, self.region_includes_end = self.get_after(view, AUTOCOMPLETE_CHAR_LIMIT)
         if new_before == self.before and new_after == self.after:
             return
-        self.autocompleting = self.should_autocomplete(
-            view,
-            old_before=self.before,
-            old_after=self.after,
-            new_before=new_before,
-            new_after=new_after)
         self.before = new_before
         self.after = new_after
-        self.actions_since_completion += 1
-    def should_autocomplete(self, view, *, old_before, old_after, new_before, new_after):
-        return (self.actions_since_completion >= 1
-            and len(view.sel()) <= 100
-            and all(sel.begin() == sel.end() for sel in view.sel())
-            and self.all_same_prefix(view, [sel.begin() for sel in view.sel()])
-            and self.all_same_suffix(view, [sel.begin() for sel in view.sel()])
-            and new_before != ""
-            and (new_after[:100] != old_after[1:101] or new_after == "" or (len(view.sel()) >= 2 and self.seen_changes))
-            and old_before[-100:] == new_before[-101:-1])
 
     def all_same_prefix(self, view, positions):
         return self.all_same(view, positions, -1, -1)
@@ -219,33 +201,64 @@ class TabNineListener(sublime_plugin.EventListener):
     def max_num_results(self):
         return self.get_settings().get("max_num_results")
     def on_post_text_command(self, view, command_name, args):
+            
+         if command_name in ["left_delete", "commit_completion", "insert_best_completion"]: 
+            self._stop_completion = True
+            
          if command_name in [ "commit_completion", "insert_best_completion"] :
             
-            current_position = view.sel()[0].end()
-            print("in post text command", view.substr(view.line(current_position)))
-            previous_position = self._current_location
-            end_of_line = view.line(sublime.Region(current_position, current_position))
-            substitution = view.substr(sublime.Region(previous_position, current_position))
-            print("substitution", substitution)
+            current_location = view.sel()[0].end()
+            previous_location = self._last_query_location
+            end_of_line = view.line(sublime.Region(current_location, current_location))
+            substitution = view.substr(sublime.Region(previous_location, current_location))
             
             existing_choice = next((x for x in self._results if x["new_prefix"] == self._completion_prefix + substitution), None)
-            self.actions_since_completion = 0
+
             if existing_choice is not None:
-                current_position += len(existing_choice["new_suffix"])
-                if existing_choice["old_suffix"]:
-                    new_position = min(current_position + (current_position - previous_position), end_of_line.end())
-                    new_args = {
-                        "begin": current_position,
-                        "end": new_position,
-                        "old_suffix": existing_choice["old_suffix"]
-                    }
-                    view.run_command("substitute", new_args)
+
+                if existing_choice["old_suffix"].strip():
+
+                    print("existing_choice:", json.dumps(existing_choice))
+                    print("old_suffix: ", existing_choice["old_suffix"])
+                    print("new_suffix: ", existing_choice["new_suffix"])
+
+                    end_search_location = min(current_location + len(substitution) + len(existing_choice["new_suffix"]), end_of_line.end())
+
+                    start_search_location = current_location + len(existing_choice["new_suffix"])
+
+                    after_substitution = view.substr(sublime.Region(start_search_location, end_search_location))
+
+                    print("substitution: ", substitution)
+                    print("after_substitution: ", after_substitution)
+            
+                    old_sufix_index = after_substitution.find(existing_choice["old_suffix"])
+                    if old_sufix_index != -1:
+                        
+                        start_erase_location = start_search_location + old_sufix_index
+                        args = {
+                            "begin": start_erase_location,
+                            "end": start_erase_location + len(existing_choice["old_suffix"]),
+                            "old_suffix": existing_choice["old_suffix"]
+                        }
+                        view.run_command("tab_nine_post_substitution", args)
 
     def on_text_command(self, view, command_name, args):
+
+        # print("text command, command:", command_name)
+        
+        if command_name in ["insert_snippet", "auto_complete"] :
+            def _run_compete():
+                view.run_command('auto_complete', {
+                    'api_completions_only': False,
+                    'disable_auto_insert':  True,
+                    'next_completion_if_showing': False
+                })
+            view.run_command('hide_auto_complete')
+            sublime.set_timeout_async(_run_compete, 0)
+            return
+
         if command_name in [ "commit_completion", "insert_best_completion"] :
-            # self._current_location = view.sel()[0].begin()
-            print("in text command", view.substr(view.line(self._current_location)))
-            
+            self._stop_completion = True
             return
 
     def on_query_context(self, view, key, operator, operand, match_all): #pylint: disable=W0613
@@ -292,7 +305,7 @@ def format_documentation(documentation):
     elif isinstance(documentation, dict) and 'kind' in documentation and documentation['kind'] == 'markdown' and 'value' in documentation:
         return escape(documentation['value'])
     else:
-        return escape(str(documentation))
+        return escape(str(documentation)) 
 
 class OpenconfigCommand(sublime_plugin.TextCommand):
     def run(self, edit):
