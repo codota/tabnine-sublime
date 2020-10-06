@@ -132,4 +132,7 @@ class TabNineProcess:
         print("capabilities: ", json.dumps(capabilities))
         return capabilities
 
+    def uninstalling(self):
+        self.request({ "Uninstalling": {}})
+
 tabnine_proc = TabNineProcess()
