@@ -4,6 +4,8 @@ import html
 import webbrowser
 import time
 import json
+from shutil import copyfile
+import os
 
 from ..tab_nine_process import tabnine_proc
 SETTINGS_PATH = 'TabNine.sublime-settings'
@@ -20,7 +22,6 @@ class TabNinePostSubstitutionCommand(sublime_plugin.TextCommand):
     def run(self, edit, begin, end, old_suffix):
         if old_suffix in self.view.substr(sublime.Region(begin, end)):
             self.view.erase(edit, sublime.Region(begin, end))
-
 
 class TabNineListener(sublime_plugin.EventListener):
     def __init__(self):
@@ -302,6 +303,14 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
         }
 
         response = tabnine_proc.request(request)
+def plugin_loaded():
+    for language in ["Python", "JavaScript"]:
+        src = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'rules', language, 'Completion Rules.tmPreferences'))
+        dest = os.path.join(sublime.packages_path(), language, 'Completion Rules.tmPreferences')
+        if not os.path.exists(dest):
+            if not os.path.exists(os.path.dirname(dest)):
+                os.makedirs(os.path.dirname(dest))
+            copyfile(src, dest)
 
 def plugin_unloaded():
     from package_control import events
