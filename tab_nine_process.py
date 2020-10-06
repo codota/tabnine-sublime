@@ -127,5 +127,9 @@ class TabNineProcess:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
 
+    def get_capabilities(self):
+        capabilities = self.request({ "Features": {}})
+        print("capabilities: ", json.dumps(capabilities))
+        return capabilities
 
 tabnine_proc = TabNineProcess()

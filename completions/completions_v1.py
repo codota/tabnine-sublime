@@ -9,9 +9,8 @@ import json
 import subprocess
 from package_control import package_manager
 from threading import Timer
-from ..TabNineProcess import tabnine_proc
+from ..tab_nine_process import tabnine_proc
 
-print("in v1")
 SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10
 AUTOCOMPLETE_CHAR_LIMIT = 100000

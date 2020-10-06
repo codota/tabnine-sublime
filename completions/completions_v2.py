@@ -5,7 +5,7 @@ import webbrowser
 import time
 import json
 
-from ..TabNineProcess import tabnine_proc
+from ..tab_nine_process import tabnine_proc
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
@@ -15,13 +15,6 @@ COMPLEATIONS_REQUEST_TRESHOLD = 1
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
         print("TabNine commands are supposed to be intercepted by TabNineListener")
-
-class TabNineLeaderKeyCommand(TabNineCommand):
-    pass
-class TabNineReverseLeaderKeyCommand(TabNineCommand):
-    pass
-class SpaceCompletion(TabNineCommand):
-    pass
 
 class TabNinePostSubstitutionCommand(sublime_plugin.TextCommand):
     def run(self, edit, begin, end, old_suffix):
@@ -263,17 +256,11 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_query_context(self, view, key, operator, operand, match_all): #pylint: disable=W0613
         if key == "tab_nine_choice_available":
-            # assert operator == sublime.OP_EQUAL
-            # return self.just_pressed_tab and operand <= len(self.choices) and not self.tab_only and operand != 1
             return False
         if key == "tab_nine_leader_key_available":
             return False
-            # assert operator == sublime.OP_EQUAL
-            # return (self.choices != [] and view.is_popup_visible()) == operand
         if key == "tab_nine_reverse_leader_key_available":
             return False
-            # assert operator == sublime.OP_EQUAL
-            # return (self.choices != []) == operand
 
 def escape(s):
     s = html.escape(s, quote=False)
