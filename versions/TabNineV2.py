@@ -218,9 +218,9 @@ class TabNineListener(sublime_plugin.EventListener):
 
                 if existing_choice["old_suffix"].strip():
 
-                    print("existing_choice:", json.dumps(existing_choice))
-                    print("old_suffix: ", existing_choice["old_suffix"])
-                    print("new_suffix: ", existing_choice["new_suffix"])
+                    # print("existing_choice:", json.dumps(existing_choice))
+                    # print("old_suffix: ", existing_choice["old_suffix"])
+                    # print("new_suffix: ", existing_choice["new_suffix"])
 
                     end_search_location = min(current_location + len(substitution) + len(existing_choice["new_suffix"]), end_of_line.end())
 
@@ -228,13 +228,13 @@ class TabNineListener(sublime_plugin.EventListener):
 
                     after_substitution = view.substr(sublime.Region(start_search_location, end_search_location))
 
-                    print("substitution: ", substitution)
-                    print("after_substitution: ", after_substitution)
+                    # print("substitution: ", substitution)
+                    # print("after_substitution: ", after_substitution)
             
-                    old_sufix_index = after_substitution.find(existing_choice["old_suffix"])
-                    if old_sufix_index != -1:
+                    old_suffix_index = after_substitution.find(existing_choice["old_suffix"])
+                    if old_suffix_index != -1:
                         
-                        start_erase_location = start_search_location + old_sufix_index
+                        start_erase_location = start_search_location + old_suffix_index
                         args = {
                             "begin": start_erase_location,
                             "end": start_erase_location + len(existing_choice["old_suffix"]),
