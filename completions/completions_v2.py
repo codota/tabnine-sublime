@@ -91,6 +91,8 @@ class TabNineListener(sublime_plugin.EventListener):
         view.window().status_message("TabNine")
         
     def on_query_completions(self, view, prefix, locations):
+        if self._last_query_location == locations[0] and self._last_location is None:
+            return None
         self._last_query_location = locations[0]
         self._completion_prefix = prefix
         if self._last_location != locations[0]:
@@ -196,10 +198,10 @@ class TabNineListener(sublime_plugin.EventListener):
         return self.get_settings().get("max_num_results")
     def on_post_text_command(self, view, command_name, args):
             
-         if command_name in ["left_delete", "commit_completion", "insert_best_completion"]: 
+         if command_name in ["left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]: 
             self._stop_completion = True
             
-         if command_name in [ "commit_completion", "insert_best_completion"] :
+         if command_name in [ "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
             
             current_location = view.sel()[0].end()
             previous_location = self._last_query_location
@@ -251,7 +253,7 @@ class TabNineListener(sublime_plugin.EventListener):
             sublime.set_timeout_async(_run_compete, 0)
             return
 
-        if command_name in [ "commit_completion", "insert_best_completion"] :
+        if command_name in [ "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
             self._stop_completion = True
             return
 
