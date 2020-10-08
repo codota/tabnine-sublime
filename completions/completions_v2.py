@@ -88,7 +88,8 @@ class TabNineListener(sublime_plugin.EventListener):
         self.on_any_event(view)
     def on_activated(self, view):
         self.on_any_event(view)
-        view.window().status_message("TabNine")
+        if view.window():
+            view.window().status_message("TabNine")
         
     def on_query_completions(self, view, prefix, locations):
         if self._last_query_location == locations[0] and self._last_location is None:
