@@ -3,6 +3,7 @@ import sublime
 import subprocess
 import json
 import stat
+from .settings  import get_settings_eager
 
 from package_control import package_manager
 
@@ -58,30 +59,26 @@ class TabNineProcess:
         self.tabnine_proc = None
         self.num_restarts = 0
 
-        def on_change():
-            self.num_restarts = 0
-            self.restart_tabnine_proc()
-        sublime.load_settings(SETTINGS_PATH).add_on_change('TabNine', on_change)
-
     @staticmethod
     def run_tabnine(inheritStdio=False, additionalArgs=[]):
         binary_dir = os.path.join(TabNineProcess.install_directory, "binaries")
-        settings = sublime.load_settings(SETTINGS_PATH)
-        tabnine_path = settings.get("custom_binary_path")
+        settings = get_settings_eager()
+        tabnine_path = settings.get("custom_binary_path", None)
+        native_auto_complete = settings.get("native_auto_complete", False)
         if tabnine_path is None:
             tabnine_path = get_tabnine_path(binary_dir)
         args = [tabnine_path, "--client", "sublime"] + additionalArgs
-        log_file_path = settings.get("log_file_path")
+        log_file_path = settings.get("log_file_path", None)
         if log_file_path is not None:
             args += ["--log-file-path", log_file_path]
-        extra_args = settings.get("extra_args")
+        extra_args = settings.get("extra_args", None)
         if extra_args is not None:
             args += extra_args
         plugin_version = PACK_MANAGER.get_metadata("TabNine").get('version')
         if not plugin_version:
             plugin_version = "Unknown"
         sublime_version = sublime.version()
-        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version]
+        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version, "nativeAutoComplete=" + str(native_auto_complete)]
         return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,

@@ -8,5 +8,7 @@
     "detail": true,
 
     // Highlighting of selected suggestions
-    "highlight": true
+    "highlight": true,
+
+    "native_auto_complete": false,
 }
