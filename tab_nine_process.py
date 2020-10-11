@@ -2,8 +2,12 @@ import os
 import sublime
 import subprocess
 import json
+from imp import reload
 import stat
 from .settings  import get_settings_eager
+
+if "dumps" not in dir(json):
+    reload(json)
 
 from package_control import package_manager
 

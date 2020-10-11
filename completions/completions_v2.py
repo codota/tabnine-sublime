@@ -35,6 +35,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self._results = []
         self._completion_prefix = ""
         self._stop_completion = True
+        self._replace_completion_with_next_completion = False
 
         def _update_settings():
             sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
@@ -78,7 +79,8 @@ class TabNineListener(sublime_plugin.EventListener):
             view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
-                    'next_completion_if_showing': False
+                    'next_completion_if_showing': True,
+                    'auto_complete_commit_on_tab': True,
             })
         if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion:
             sublime.set_timeout_async(_run_compete, 0)
@@ -92,10 +94,17 @@ class TabNineListener(sublime_plugin.EventListener):
             view.window().status_message("TabNine")
         
     def on_query_completions(self, view, prefix, locations):
+        
+        # print("in on_query_completions")
+        if self._replace_completion_with_next_completion == True:
+            completions = [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
+            self._replace_completion_with_next_completion = False
+            return completions
         if self._last_query_location == locations[0] and self._last_location is None:
-            return None
+            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
         self._last_query_location = locations[0]
         self._completion_prefix = prefix
+        _old_prefix = None
         if self._last_location != locations[0]:
             temp_location = self._last_location
             self._last_location = locations[0]
@@ -111,30 +120,60 @@ class TabNineListener(sublime_plugin.EventListener):
                     }
                 }
                 response = tabnine_proc.request(request)
+                if response is None :
+                    self._results = []
+                    self._user_message = []
+                    return
+                
+                # print("-----------")
+                # print("response: ", json.dumps(response))
+                # print("-----------")
+
                 self._results = response["results"]
                 self._user_message = response["user_message"]
+                _old_prefix = response["old_prefix"]
+
+                if len(self._results) < 1:
+                    return
+                    
                 if self._results and self._user_message and view.window():
                     view.window().status_message(" ".join(self._user_message))
                 elif view.window():
                     view.window().status_message("TabNine")
-                   
-                
+
+
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
-                    'next_completion_if_showing': False
+                    'next_completion_if_showing': True,
+                    'auto_complete_commit_on_tab': True,
                 })
                 
             view.run_command('hide_auto_complete')
             sublime.set_timeout_async(_run_complete, 0)
 
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS)
+            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
         if self._last_location == locations[0]:
             self._last_location = None
+            if len(self._results) == 1 and _old_prefix is None:
+                existing = view.substr(sublime.Region(locations[0] - (len(prefix) + 2), locations[0]))
+                is_tabNine_command = existing == "::{}".format(prefix)
+                if is_tabNine_command:
+                    view.show_popup(
+                        self._results[0]["new_prefix"],
+                        sublime.COOPERATE_WITH_AUTO_COMPLETE,
+                        location=locations[0],
+                        max_width=1500,
+                        max_height=1200,
+                        on_navigate=webbrowser.open,
+                    )
+                else:
+                    view.hide_popup()
+
             completions = [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
 
             flags = sublime.INHIBIT_WORD_COMPLETIONS
-            if len(completions):
+            if len(completions) > 0:
                 flags = 0
             return (completions, flags)
 
@@ -198,9 +237,13 @@ class TabNineListener(sublime_plugin.EventListener):
     def max_num_results(self):
         return self.get_settings().get("max_num_results")
     def on_post_text_command(self, view, command_name, args):
+         # print("on_post_text_command, command:", command_name, "args: ", args)
+         if command_name == "replace_completion_with_next_completion":
+            self._replace_completion_with_next_completion = False
             
          if command_name in ["left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]: 
             self._stop_completion = True
+            view.hide_popup()
             
          if command_name in [ "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
             
@@ -241,20 +284,25 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_text_command(self, view, command_name, args):
 
-        # print("text command, command:", command_name)
+
+        # print("text command, command:", command_name, "args: ", args)
+ 
+        if command_name == "replace_completion_with_next_completion":
+            self._replace_completion_with_next_completion = True
         
-        if command_name in ["insert_snippet", "auto_complete"] :
+        if command_name in ["insert_snippet"] :
             def _run_compete():
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
-                    'next_completion_if_showing': False
+                    'next_completion_if_showing': True,
+                    'auto_complete_commit_on_tab': True,
                 })
             view.run_command('hide_auto_complete')
             sublime.set_timeout_async(_run_compete, 0)
             return
 
-        if command_name in [ "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
+        if command_name in [ "left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
             self._stop_completion = True
             return
 
