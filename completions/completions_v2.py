@@ -70,7 +70,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self.on_any_event(view)
 
         view_sel = view.sel()
-        if not view_sel:
+        if not view_sel or len(view_sel) == 0:
             return
 
         current_location = view_sel[0].end()
