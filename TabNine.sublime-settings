@@ -11,4 +11,6 @@
     "highlight": true,
 
     "native_auto_complete": false,
+
+    "development_mode": false
 }

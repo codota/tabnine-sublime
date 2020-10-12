@@ -4,7 +4,7 @@ import subprocess
 import json
 from imp import reload
 import stat
-from .settings  import get_settings_eager
+from .lib.settings  import get_settings_eager, is_native_auto_complete
 
 if "dumps" not in dir(json):
     reload(json)
@@ -68,7 +68,6 @@ class TabNineProcess:
         binary_dir = os.path.join(TabNineProcess.install_directory, "binaries")
         settings = get_settings_eager()
         tabnine_path = settings.get("custom_binary_path", None)
-        native_auto_complete = settings.get("native_auto_complete", False)
         if tabnine_path is None:
             tabnine_path = get_tabnine_path(binary_dir)
         args = [tabnine_path, "--client", "sublime"] + additionalArgs
@@ -82,7 +81,7 @@ class TabNineProcess:
         if not plugin_version:
             plugin_version = "Unknown"
         sublime_version = sublime.version()
-        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version, "nativeAutoComplete=" + str(native_auto_complete)]
+        args += ["--client-metadata", "clientVersion=" + sublime_version, "clientApiVersion=" + sublime_version, "pluginVersion=" + plugin_version, "nativeAutoComplete=" + str(is_native_auto_complete())]
         return subprocess.Popen(
             args,
             stdin=None if inheritStdio else subprocess.PIPE,
