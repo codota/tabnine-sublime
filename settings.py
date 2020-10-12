@@ -1,19 +1,19 @@
 import json
 import os
 
-install_directory = os.path.dirname(__file__)
-settings_dir = os.path.abspath(os.path.join(install_directory, os.pardir, "User", "TabNine.sublime-settings"))
+_install_directory = os.path.dirname(__file__)
+_settings_dir = os.path.abspath(os.path.join(_install_directory, os.pardir, "User", "TabNine.sublime-settings"))
 
-raw_settings = None
+_SETTINGS = None
 def get_settings_eager():
-	global raw_settings
-	if raw_settings is None:
+	global _SETTINGS
+	if _SETTINGS is None:
 		try:
-			with open(settings_dir) as json_file:
-				raw_settings = json.load(json_file)
-				return raw_settings
+			with open(_settings_dir) as json_file:
+				_SETTINGS = json.load(json_file)
+				return _SETTINGS
 		except:
-			raw_settings = {}
-			return raw_settings
+			_SETTINGS = {}
+			return _SETTINGS
 	else: 
-		return raw_settings
+		return _SETTINGS
