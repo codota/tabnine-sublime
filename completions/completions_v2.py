@@ -8,6 +8,7 @@ from shutil import copyfile
 import os
 
 from ..tab_nine_process import tabnine_proc
+from ..lib import logger
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
@@ -16,7 +17,7 @@ COMPLEATIONS_REQUEST_TRESHOLD = 1
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
-        print("TabNine commands are supposed to be intercepted by TabNineListener")
+        logger.log("TabNine commands are supposed to be intercepted by TabNineListener")
 
 class TabNinePostSubstitutionCommand(sublime_plugin.TextCommand):
     def run(self, edit, begin, end, old_suffix):
@@ -77,7 +78,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
         last_region = view.substr(sublime.Region(max(current_location - 2, 0), current_location)).rstrip()
         def _run_compete():
-            # print("running in on_modified")
+            logger.debug("running in on_modified")
             view.run_command('hide_auto_complete')
             view.run_command('auto_complete', {
                     'api_completions_only': False,
@@ -98,14 +99,14 @@ class TabNineListener(sublime_plugin.EventListener):
         
     def on_query_completions(self, view, prefix, locations):
         
-        # print("in on_query_completions")
+        logger.debug("in on_query_completions")
 
         if not view.match_selector(locations[0], "source | text"):
             return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
         last_region = view.substr(sublime.Region(max(locations[0] - 2, 0), locations[0])).rstrip()
         if last_region in [ "", os.linesep]:
-            # print("empty character query: ")
+            logger.debug("empty character query")
             return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
         
         if self._replace_completion_with_next_completion == True:
@@ -113,7 +114,7 @@ class TabNineListener(sublime_plugin.EventListener):
             return self._completions
             
         if self._last_query_location == locations[0] and self._last_location is None:
-            # print("last location is None")
+            logger.debug("last location is None")
             return self._completions
 
         self._last_query_location = locations[0]
@@ -139,9 +140,9 @@ class TabNineListener(sublime_plugin.EventListener):
                     self._user_message = []
                     return
                 
-                # print("-----------")
-                # print("response: ", json.dumps(response))
-                # print("-----------")
+                logger.debug("--- response ---")
+                logger.jsonstr(response)
+                logger.debug("--- end response ---")
 
                 self._results = response["results"]
                 self._user_message = response["user_message"]
@@ -186,7 +187,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
             self._completions = [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get("new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
 
-            # print("completions:", self._completions)
+            logger.debug("completions: {}".format(self._completions))
 
             flags = sublime.INHIBIT_WORD_COMPLETIONS
             if len(self._completions) > 0:
@@ -253,7 +254,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def max_num_results(self):
         return self.get_settings().get("max_num_results")
     def on_post_text_command(self, view, command_name, args):
-         # print("on_post_text_command, command:", command_name, "args: ", args)
+         logger.debug("on_post_text_command, command: {}, args: {} ".format(command_name, args))
          if command_name == "replace_completion_with_next_completion":
             self._replace_completion_with_next_completion = False
             
@@ -274,9 +275,9 @@ class TabNineListener(sublime_plugin.EventListener):
 
                 if existing_choice["old_suffix"].strip():
 
-                    # print("existing_choice:", json.dumps(existing_choice))
-                    # print("old_suffix: ", existing_choice["old_suffix"])
-                    # print("new_suffix: ", existing_choice["new_suffix"])
+                    logger.debug("existing_choice: {}".format(existing_choice))
+                    logger.debug("old_suffix: {}".format(existing_choice["old_suffix"]))
+                    logger.debug("new_suffix: {}".format(existing_choice["new_suffix"]))
 
                     end_search_location = min(current_location + len(substitution) + len(existing_choice["new_suffix"]), end_of_line.end())
 
@@ -284,8 +285,8 @@ class TabNineListener(sublime_plugin.EventListener):
 
                     after_substitution = view.substr(sublime.Region(start_search_location, end_search_location))
 
-                    # print("substitution: ", substitution)
-                    # print("after_substitution: ", after_substitution)
+                    logger.debug("substitution: {}".format(substitution))
+                    logger.debug("after_substitution: {}".format(after_substitution))
             
                     old_suffix_index = after_substitution.find(existing_choice["old_suffix"])
                     if old_suffix_index != -1:
@@ -299,7 +300,7 @@ class TabNineListener(sublime_plugin.EventListener):
                         view.run_command("tab_nine_post_substitution", args)
                         
          if command_name in ["insert_snippet"] :
-            # print("running insert snippet")
+            logger.debug("running insert snippet")
             def _run_compete():
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
@@ -314,14 +315,14 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_text_command(self, view, command_name, args):
 
 
-        # print("text command, command:", command_name, "args: ", args)
+        logger.debug("text command, command: {}, args: {}".format(command_name, args))
  
         if command_name == "replace_completion_with_next_completion":
             self._replace_completion_with_next_completion = True
 
         if command_name in ["left_delete"] :
             def _run_complete():
-                # print("running left_delete")
+                logger.debug("running left_delete")
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
