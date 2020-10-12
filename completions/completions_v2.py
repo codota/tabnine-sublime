@@ -17,7 +17,7 @@ COMPLEATIONS_REQUEST_TRESHOLD = 1
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs): #pylint: disable=W0613,E0211
-        logger.log("TabNine commands are supposed to be intercepted by TabNineListener")
+        logger.info("TabNine commands are supposed to be intercepted by TabNineListener")
 
 class TabNinePostSubstitutionCommand(sublime_plugin.TextCommand):
     def run(self, edit, begin, end, old_suffix):
