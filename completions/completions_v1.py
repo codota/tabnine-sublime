@@ -5,11 +5,10 @@ import os
 import stat
 import webbrowser
 import time
-import json
 import subprocess
 from package_control import package_manager
 from threading import Timer
-from ..tab_nine_process import tabnine_proc
+from ..lib.tab_nine_process import tabnine_proc
 
 SETTINGS_PATH = 'TabNine.sublime-settings'
 MAX_RESTARTS = 10

@@ -1,13 +1,10 @@
 import os
 import sublime
 import subprocess
-import json
 from imp import reload
 import stat
-from .lib.settings  import get_settings_eager, is_native_auto_complete
+from .settings  import get_settings_eager, is_native_auto_complete
 
-if "dumps" not in dir(json):
-    reload(json)
 
 from package_control import package_manager
 
@@ -65,7 +62,7 @@ class TabNineProcess:
 
     @staticmethod
     def run_tabnine(inheritStdio=False, additionalArgs=[]):
-        binary_dir = os.path.join(TabNineProcess.install_directory, "binaries")
+        binary_dir = os.path.join(TabNineProcess.install_directory, "..", "binaries")
         settings = get_settings_eager()
         tabnine_path = settings.get("custom_binary_path", None)
         if tabnine_path is None:
@@ -98,6 +95,7 @@ class TabNineProcess:
         self.tabnine_proc = TabNineProcess.run_tabnine()
 
     def request(self, req):
+        from json import loads, dumps
         if self.tabnine_proc is None:
             self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
@@ -112,14 +110,14 @@ class TabNineProcess:
             "version": "2.0.0",
             "request": req
         }
-        req = json.dumps(req)
+        req = dumps(req)
         req += '\n'
         try:
             self.tabnine_proc.stdin.write(bytes(req, "UTF-8"))
             self.tabnine_proc.stdin.flush()
             result = self.tabnine_proc.stdout.readline()
             result = str(result, "UTF-8")
-            result = json.loads(result)
+            result = loads(result)
             return result
         except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
             print("Exception while interacting with TabNine subprocess:", e)
@@ -134,4 +132,5 @@ class TabNineProcess:
     def uninstalling(self):
         self.request({ "Uninstalling": {}})
 
+global tabnine_proc 
 tabnine_proc = TabNineProcess()

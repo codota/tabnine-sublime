@@ -1,5 +1,4 @@
 import datetime
-import json
 
 from .settings import is_development
 
@@ -11,7 +10,9 @@ def debug(msg, if_development=True):
         info(msg)
 
 def jsonstr(obj):
-    return json.dumps(obj, indent=2)
+	from json import dumps
+	return dumps(obj, indent=2)
+    # return dumps(obj, indent=2)
 
 def _time():
     return datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S.%f')[:-3]

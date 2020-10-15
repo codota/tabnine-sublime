@@ -3,11 +3,11 @@ import sublime_plugin
 import html
 import webbrowser
 import time
-import json
 from shutil import copyfile
 import os
 
-from ..tab_nine_process import tabnine_proc
+
+from ..lib.tab_nine_process import tabnine_proc
 from ..lib import logger
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
@@ -94,12 +94,14 @@ class TabNineListener(sublime_plugin.EventListener):
         self.on_any_event(view)
     def on_activated(self, view):
         self.on_any_event(view)
-        if view.window():
-            view.window().status_message("TabNine")
+        view.set_status("tabnine-status", "TabNine")
         
     def on_query_completions(self, view, prefix, locations):
         
         logger.debug("in on_query_completions")
+
+        if view.settings().get("tabnine-disabled", False):
+            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
         if not view.match_selector(locations[0], "source | text"):
             return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
@@ -153,8 +155,6 @@ class TabNineListener(sublime_plugin.EventListener):
                     
                 if self._results and self._user_message and view.window():
                     view.window().status_message(" ".join(self._user_message))
-                elif view.window():
-                    view.window().status_message("TabNine")
 
 
                 view.run_command('auto_complete', {
