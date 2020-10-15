@@ -11,7 +11,6 @@ if int(sublime.version()) >= 3114:
         for module_name in sys.modules
         if (module_name.startswith(prefix) and module_name != __name__) or ('json' == module_name)
     ]:
-        print("module_name ", module_name)
         del sys.modules[module_name]
     prefix = None
 
