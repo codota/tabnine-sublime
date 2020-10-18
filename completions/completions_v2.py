@@ -80,18 +80,19 @@ class TabNineListener(sublime_plugin.EventListener):
         view.set_status("tabnine-status", "TabNine")
         
     def on_query_completions(self, view, prefix, locations):
-        
+        _EMPTY_COMPLETION_LIST = ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
         logger.debug("in on_query_completions")
 
         if view.settings().get("tabnine-disabled", False):
-            return None
+            return _EMPTY_COMPLETION_LIST if prefix.strip() == "" else None
+            
         if not view.match_selector(locations[0], "source | text"):
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
 
         last_region = view.substr(sublime.Region(max(locations[0] - 2, 0), locations[0])).rstrip()
         if last_region in [ "", os.linesep]:
             logger.debug("empty character query")
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
         
         if self._replace_completion_with_next_completion == True:
             self._replace_completion_with_next_completion = False
@@ -149,7 +150,7 @@ class TabNineListener(sublime_plugin.EventListener):
             view.run_command('hide_auto_complete')
             sublime.set_timeout_async(_run_complete, 0)
 
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
         if self._last_location == locations[0]:
             self._last_location = None
             if len(self._results) == 1 and old_prefix is None:
