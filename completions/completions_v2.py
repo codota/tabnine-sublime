@@ -59,7 +59,8 @@ class TabNineListener(sublime_plugin.EventListener):
         current_location = view_sel[0].end()
 
         last_region = view.substr(sublime.Region(max(current_location - 2, 0), current_location)).rstrip()
-        def _run_compete():
+        is_disabled = view.settings().get("tabnine-disabled", False)
+        def _run_complete():
             logger.debug("running in on_modified")
             view.run_command('hide_auto_complete')
             view.run_command('auto_complete', {
@@ -68,8 +69,8 @@ class TabNineListener(sublime_plugin.EventListener):
                     'next_completion_if_showing': True,
                     'auto_complete_commit_on_tab': True,
             })
-        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and last_region not in ["", os.linesep]:
-            sublime.set_timeout_async(_run_compete, 0)
+        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and last_region not in ["", os.linesep] and not is_disabled:
+            sublime.set_timeout_async(_run_complete, 0)
 
         self._stop_completion = None
     def on_selection_modified(self, view):
@@ -282,7 +283,9 @@ class TabNineListener(sublime_plugin.EventListener):
                         
          if command_name in ["insert_snippet"] :
             logger.debug("running insert snippet")
-            def _run_compete():
+            is_disabled = view.settings().get("tabnine-disabled", False)
+
+            def _run_complete():
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
@@ -290,7 +293,8 @@ class TabNineListener(sublime_plugin.EventListener):
                     'auto_complete_commit_on_tab': True,
                 })
             view.run_command('hide_auto_complete')
-            sublime.set_timeout_async(_run_compete, 0)
+            if not is_disabled:
+                sublime.set_timeout_async(_run_complete, 0)
             return
 
     def on_text_command(self, view, command_name, args):
@@ -315,8 +319,9 @@ class TabNineListener(sublime_plugin.EventListener):
             current_location = view.sel()[0].end()
             last_character = view.substr(max(current_location - 1, 0))
             selection = view.substr(view.sel()[0])
+            is_disabled = view.settings().get("tabnine-disabled", False)
             
-            if last_character != "\n" and last_character != " " and not "\n" in selection:
+            if last_character != "\n" and last_character != " " and not "\n" in selection and not is_disabled:
                 sublime.set_timeout_async(_run_complete, 0)
             
         if command_name in [ "left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
