@@ -377,10 +377,6 @@ def plugin_loaded():
 
 
 def _setup_config():
-    if sublime.load_settings(PREFERENCES_PATH).get("tabnine-disabled", True):
-        print("TabNine is disabled")
-        return
-
     sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
     sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
         "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",

@@ -29,6 +29,7 @@ else:
 class DisableViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         self.view.settings().set("tabnine-disabled", True)
+        tabnine_proc.set_state({"State": {"state_type": "disable-view"}})
 
     def is_visible(self, *args):
         return is_v2 and not self.view.settings().get("tabnine-disabled", False)
@@ -36,6 +37,8 @@ class DisableViewCommand(sublime_plugin.TextCommand):
 class EnableViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         self.view.settings().set("tabnine-disabled", False)
+        tabnine_proc.set_state({"State": {"state_type": "enable-view"}})
+        
     def is_visible(self, *args):
         return is_v2 and self.view.settings().get("tabnine-disabled", False)
 

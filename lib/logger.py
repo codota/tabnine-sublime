@@ -12,7 +12,6 @@ def debug(msg, if_development=True):
 def jsonstr(obj):
 	from json import dumps
 	return dumps(obj, indent=2)
-    # return dumps(obj, indent=2)
 
 def _time():
     return datetime.datetime.now().strftime('%m/%d/%y %H:%M:%S.%f')[:-3]

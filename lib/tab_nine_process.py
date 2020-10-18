@@ -2,6 +2,7 @@ import os
 import sublime
 import subprocess
 from imp import reload
+from json import loads, dumps
 import stat
 from .settings  import get_settings_eager, is_native_auto_complete
 
@@ -95,7 +96,6 @@ class TabNineProcess:
         self.tabnine_proc = TabNineProcess.run_tabnine()
 
     def request(self, req):
-        from json import loads, dumps
         if self.tabnine_proc is None:
             self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
@@ -131,6 +131,9 @@ class TabNineProcess:
 
     def uninstalling(self):
         self.request({ "Uninstalling": {}})
+
+    def set_state(self, state):
+        self.request({ "SetState": { "state_type": state } })
 
 global tabnine_proc 
 tabnine_proc = TabNineProcess()
