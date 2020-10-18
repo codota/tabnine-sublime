@@ -3,11 +3,11 @@ import sublime_plugin
 import html
 import webbrowser
 import time
-import json
 from shutil import copyfile
 import os
 
-from ..tab_nine_process import tabnine_proc
+
+from ..lib.tab_nine_process import tabnine_proc
 from ..lib import logger
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
@@ -39,24 +39,6 @@ class TabNineListener(sublime_plugin.EventListener):
         self._replace_completion_with_next_completion = False
         self._completions = []
 
-        def _update_settings():
-            sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
-            sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
-                "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",
-                "selector": "source.python"
-            },
-            {
-                "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! ",
-                "selector": "source & - source.python - constant.numeric"
-            },
-            {
-                "characters": " qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
-                "selector": "text"
-            }])
-            sublime.save_settings(PREFERENCES_PATH)
-
-        sublime.set_timeout(_update_settings, 250)
-
 
     def get_before(self, view, char_limit):
         loc = view.sel()[0].begin()
@@ -77,7 +59,8 @@ class TabNineListener(sublime_plugin.EventListener):
         current_location = view_sel[0].end()
 
         last_region = view.substr(sublime.Region(max(current_location - 2, 0), current_location)).rstrip()
-        def _run_compete():
+        is_disabled = view.settings().get("tabnine-disabled", False)
+        def _run_complete():
             logger.debug("running in on_modified")
             view.run_command('hide_auto_complete')
             view.run_command('auto_complete', {
@@ -86,28 +69,30 @@ class TabNineListener(sublime_plugin.EventListener):
                     'next_completion_if_showing': True,
                     'auto_complete_commit_on_tab': True,
             })
-        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and last_region not in ["", os.linesep]:
-            sublime.set_timeout_async(_run_compete, 0)
+        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and last_region not in ["", os.linesep] and not is_disabled:
+            sublime.set_timeout_async(_run_complete, 0)
 
         self._stop_completion = None
     def on_selection_modified(self, view):
         self.on_any_event(view)
     def on_activated(self, view):
         self.on_any_event(view)
-        if view.window():
-            view.window().status_message("TabNine")
+        view.set_status("tabnine-status", "TabNine")
         
     def on_query_completions(self, view, prefix, locations):
-        
+        _EMPTY_COMPLETION_LIST = ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
         logger.debug("in on_query_completions")
 
+        if view.settings().get("tabnine-disabled", False):
+            return _EMPTY_COMPLETION_LIST if prefix.strip() == "" else None
+            
         if not view.match_selector(locations[0], "source | text"):
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
 
         last_region = view.substr(sublime.Region(max(locations[0] - 2, 0), locations[0])).rstrip()
         if last_region in [ "", os.linesep]:
             logger.debug("empty character query")
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
         
         if self._replace_completion_with_next_completion == True:
             self._replace_completion_with_next_completion = False
@@ -153,8 +138,6 @@ class TabNineListener(sublime_plugin.EventListener):
                     
                 if self._results and self._user_message and view.window():
                     view.window().status_message(" ".join(self._user_message))
-                elif view.window():
-                    view.window().status_message("TabNine")
 
 
                 view.run_command('auto_complete', {
@@ -167,7 +150,7 @@ class TabNineListener(sublime_plugin.EventListener):
             view.run_command('hide_auto_complete')
             sublime.set_timeout_async(_run_complete, 0)
 
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+            return _EMPTY_COMPLETION_LIST
         if self._last_location == locations[0]:
             self._last_location = None
             if len(self._results) == 1 and old_prefix is None:
@@ -301,7 +284,9 @@ class TabNineListener(sublime_plugin.EventListener):
                         
          if command_name in ["insert_snippet"] :
             logger.debug("running insert snippet")
-            def _run_compete():
+            is_disabled = view.settings().get("tabnine-disabled", False)
+
+            def _run_complete():
                 view.run_command('auto_complete', {
                     'api_completions_only': False,
                     'disable_auto_insert':  True,
@@ -309,7 +294,8 @@ class TabNineListener(sublime_plugin.EventListener):
                     'auto_complete_commit_on_tab': True,
                 })
             view.run_command('hide_auto_complete')
-            sublime.set_timeout_async(_run_compete, 0)
+            if not is_disabled:
+                sublime.set_timeout_async(_run_complete, 0)
             return
 
     def on_text_command(self, view, command_name, args):
@@ -334,8 +320,9 @@ class TabNineListener(sublime_plugin.EventListener):
             current_location = view.sel()[0].end()
             last_character = view.substr(max(current_location - 1, 0))
             selection = view.substr(view.sel()[0])
+            is_disabled = view.settings().get("tabnine-disabled", False)
             
-            if last_character != "\n" and last_character != " " and not "\n" in selection:
+            if last_character != "\n" and last_character != " " and not "\n" in selection and not is_disabled:
                 sublime.set_timeout_async(_run_complete, 0)
             
         if command_name in [ "left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion"] :
@@ -391,6 +378,31 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
 
         response = tabnine_proc.request(request)
 def plugin_loaded():
+    _setup_config()
+    _init_rules()
+
+
+def _setup_config():
+    sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
+    sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
+        "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",
+        "selector": "source.python"
+    },
+    {
+        "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! ",
+        "selector": "source & - source.python - constant.numeric"
+    },
+    {
+        "characters": " qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+        "selector": "text"
+    }])
+
+def _revert_config():
+    sublime.load_settings(PREFERENCES_PATH).erase("auto_complete_triggers")
+    sublime.load_settings(PREFERENCES_PATH).erase("auto_complete")
+
+
+def _init_rules():
     for language in ["Python", "JavaScript"]:
         src = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'rules', language, 'Completion Rules.tmPreferences'))
         dest = os.path.join(sublime.packages_path(), language, 'Completion Rules.tmPreferences')
@@ -403,4 +415,5 @@ def plugin_unloaded():
     from package_control import events
 
     if events.remove('TabNine'):
+        _revert_config()
         tabnine_proc.uninstalling()

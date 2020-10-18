@@ -2,5 +2,14 @@
     {
         "caption": "TabNine: Open Configuration",
         "command": "openconfig"
+    },{
+    	"caption": "TabNine: Disable Current View",
+        "command": "disable_view"	
+    },{
+    	"caption": "TabNine: Enable Current View",
+        "command": "enable_view"	
+    },{
+    	"caption": "TabNine: Enable Native Auto Complete",
+        "command": "enable_native_auto_complete"
     }
 ]
