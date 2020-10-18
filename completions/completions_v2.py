@@ -39,24 +39,6 @@ class TabNineListener(sublime_plugin.EventListener):
         self._replace_completion_with_next_completion = False
         self._completions = []
 
-        def _update_settings():
-            sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
-            sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
-                "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",
-                "selector": "source.python"
-            },
-            {
-                "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! ",
-                "selector": "source & - source.python - constant.numeric"
-            },
-            {
-                "characters": " qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
-                "selector": "text"
-            }])
-            sublime.save_settings(PREFERENCES_PATH)
-
-        sublime.set_timeout(_update_settings, 250)
-
 
     def get_before(self, view, char_limit):
         loc = view.sel()[0].begin()
@@ -101,8 +83,7 @@ class TabNineListener(sublime_plugin.EventListener):
         logger.debug("in on_query_completions")
 
         if view.settings().get("tabnine-disabled", False):
-            return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
-
+            return None
         if not view.match_selector(locations[0], "source | text"):
             return ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 
@@ -391,6 +372,35 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
 
         response = tabnine_proc.request(request)
 def plugin_loaded():
+    _setup_config()
+    _init_rules()
+
+
+def _setup_config():
+    if sublime.load_settings(PREFERENCES_PATH).get("tabnine-disabled", True):
+        print("TabNine is disabled")
+        return
+
+    sublime.load_settings(PREFERENCES_PATH).set('auto_complete', True)
+    sublime.load_settings(PREFERENCES_PATH).set('auto_complete_triggers', [{
+        "characters": ".(){}[],\'\"=<>/\\+-|&*%=$#@! ",
+        "selector": "source.python"
+    },
+    {
+        "characters": ":.(){}[],\'\"=<>/\\+-|&*%=$#@! ",
+        "selector": "source & - source.python - constant.numeric"
+    },
+    {
+        "characters": " qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP",
+        "selector": "text"
+    }])
+
+def _revert_config():
+    sublime.load_settings(PREFERENCES_PATH).erase("auto_complete_triggers")
+    sublime.load_settings(PREFERENCES_PATH).erase("auto_complete")
+
+
+def _init_rules():
     for language in ["Python", "JavaScript"]:
         src = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, 'rules', language, 'Completion Rules.tmPreferences'))
         dest = os.path.join(sublime.packages_path(), language, 'Completion Rules.tmPreferences')
@@ -403,4 +413,5 @@ def plugin_unloaded():
     from package_control import events
 
     if events.remove('TabNine'):
+        _revert_config()
         tabnine_proc.uninstalling()
