@@ -2,7 +2,9 @@ import sublime_plugin
 import sublime
 import sys
 
-if int(sublime.version()) >= 3114:
+_is_ST3 = int(sublime.version()) >= 3114
+
+if _is_ST3:
     # Clear module cache to force reloading all modules of this package.
     # See https://github.com/emmetio/sublime-text-plugin/issues/35
     prefix = __package__ + "."  # don't clear the base package
