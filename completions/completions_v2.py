@@ -153,7 +153,7 @@ class TabNineListener(sublime_plugin.EventListener):
             logger.debug("empty character query")
             return EMPTY_COMPLETION_LIST
         
-        if self._replace_completion_with_next_completion == True:
+        if self._replace_completion_with_next_completion:
             self._replace_completion_with_next_completion = False
             return self._completions
             
