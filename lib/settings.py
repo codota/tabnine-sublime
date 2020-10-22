@@ -37,3 +37,6 @@ def is_native_auto_complete():
 		_IS_NATIVE_AUTO_IMPORT = _SETTINGS.get('native_auto_complete', False)
 		
 	return _IS_NATIVE_AUTO_IMPORT
+
+def is_tabnine_disabled(view):
+    return view.settings().get("tabnine-disabled", False)
