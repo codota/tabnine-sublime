@@ -365,13 +365,8 @@ class TabNineListener(sublime_plugin.EventListener):
         return command_name in STOP_COMPLETION_COMMANDS or is_new_line_inserted
 
     def on_query_context(self, view, key, operator, operand, match_all):  # pylint: disable=W0613
-        if key == "tab_nine_choice_available":
+        if key in  ["tab_nine_choice_available", "tab_nine_leader_key_available", "tab_nine_reverse_leader_key_available"]:
             return False
-        if key == "tab_nine_leader_key_available":
-            return False
-        if key == "tab_nine_reverse_leader_key_available":
-            return False
-
 
 def escape(s):
     s = html.escape(s, quote=False)
