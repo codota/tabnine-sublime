@@ -10,7 +10,7 @@ import os
 from ..lib.tab_nine_process import tabnine_proc
 from ..lib import logger
 from ..lib.settings import is_tabnine_disabled
-from ..lib.helpers import (get_before,
+from ..lib.view_helpers import (get_before,
                            get_after,
                            is_json_end_line,
                            is_query_after_new_line,
