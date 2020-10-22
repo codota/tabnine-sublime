@@ -10,12 +10,18 @@ import os
 from ..lib.tab_nine_process import tabnine_proc
 from ..lib import logger
 from ..lib.settings import is_tabnine_disabled
-from ..lib.helpers import get_before, get_after, is_json_end_line, is_query_after_new_line, should_return_empty_list
+from ..lib.helpers import (get_before,
+                           get_after,
+                           is_json_end_line,
+                           is_query_after_new_line,
+                           should_return_empty_list)
 
 SETTINGS_PATH = 'TabNine.sublime-settings'
 AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = 'Preferences.sublime-settings'
 COMPLEATIONS_REQUEST_TRESHOLD = 1
+STOP_COMPLETION_COMMANDS = ["left_delete", "commit_completion", "insert_best_completion",
+                            "replace_completion_with_next_completion", "toggle_comment", "insert_snippet"]
 
 
 class TabNineCommand(sublime_plugin.TextCommand):
@@ -261,12 +267,11 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_post_text_command(self, view, command_name, args):
         logger.debug("on_post_text_command, command: {}, args: {} ".format(
             command_name, args))
-        is_new_line_inserted = command_name == "insert" and args["characters"] == '\n'
 
         if command_name == "replace_completion_with_next_completion":
             self._replace_completion_with_next_completion = False
 
-        if command_name in ["left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion", "toggle_comment", "insert_snippet"] or is_new_line_inserted:
+        if self.is_stop_completion(command_name, args):
             self._stop_completion = True
             view.hide_popup()
 
@@ -281,11 +286,7 @@ class TabNineListener(sublime_plugin.EventListener):
                 })
             view.run_command('hide_auto_complete')
 
-            current_location = view.sel()[0].end()
-            last_character = view.substr(max(current_location - 1, 0)).strip()
-            is_disabled = is_tabnine_disabled(view)
-
-            if last_character != "" and last_character != "\n" and self._left_deleted_character != "\n" and not "\n" in self._left_deleted_selection and not is_disabled:
+            if self.should_run_competion_on_delete(view):
                 sublime.set_timeout_async(_run_complete, 0)
 
         if command_name in ["commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]:
@@ -349,9 +350,19 @@ class TabNineListener(sublime_plugin.EventListener):
             self._left_deleted_character = view.substr(
                 max(view.sel()[0].end() - 1, 0))
 
-        if command_name in ["left_delete", "commit_completion", "insert_best_completion", "replace_completion_with_next_completion", "toggle_comment", "insert_snippet"] or is_new_line_inserted:
+        if self.is_stop_completion(command_name, args):
             self._stop_completion = True
             return
+
+    def should_run_competion_on_delete(self, view):
+        current_location = view.sel()[0].end()
+        last_character = view.substr(max(current_location - 1, 0)).strip()
+        is_disabled = is_tabnine_disabled(view)
+        return last_character != "" and last_character != "\n" and self._left_deleted_character != "\n" and not "\n" in self._left_deleted_selection and not is_disabled
+
+    def is_stop_completion(self, command_name, args):
+        is_new_line_inserted = command_name == "insert" and args["characters"] == '\n'
+        return command_name in STOP_COMPLETION_COMMANDS or is_new_line_inserted
 
     def on_query_context(self, view, key, operator, operand, match_all):  # pylint: disable=W0613
         if key == "tab_nine_choice_available":
