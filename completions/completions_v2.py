@@ -12,7 +12,7 @@ from ..lib import logger
 from ..lib.settings import is_tabnine_disabled
 from ..lib.view_helpers import (get_before,
                            get_after,
-                           is_json_end_line,
+                           should_stop_completion_after_end_line,
                            is_query_after_new_line,
                            should_return_empty_list)
 
@@ -79,10 +79,10 @@ class TabNineListener(sublime_plugin.EventListener):
     def should_run_completion_on_modified(self, view):
         current_location = view.sel()[0].end()
         is_disabled = is_tabnine_disabled(view)
-        in_json_end_line = is_json_end_line(view, current_location)
+        stop_completion_after_end_line = should_stop_completion_after_end_line(view, current_location)
         in_query_after_new_line = is_query_after_new_line(
             view, current_location)
-        return current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and not is_disabled and not in_json_end_line and not in_query_after_new_line
+        return current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and not is_disabled and not stop_completion_after_end_line and not in_query_after_new_line
 
     def on_selection_modified(self, view):
         self.on_any_event(view)
@@ -184,10 +184,11 @@ class TabNineListener(sublime_plugin.EventListener):
         return len(self._completions) > 0
 
     def handle_tabnine_commands(self, view, locations, prefix):
-        if len(self._results) == 1 and self._old_prefix is None:
+        if len(self._results) == 1 and self._old_prefix is None and prefix != "":
+            seperator = "::"
             existing = view.substr(sublime.Region(
-                max(locations[0] - (len(prefix) + 2), 0), locations[0]))
-            is_tabNine_command = existing == "::{}".format(prefix)
+                max(locations[0] - (len(prefix) + len(seperator)), 0), locations[0]))
+            is_tabNine_command = existing == "{}{}".format(seperator, prefix)
             if is_tabNine_command:
                 view.show_popup(
                     self._results[0]["new_prefix"],
@@ -273,21 +274,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
         if self.is_stop_completion(command_name, args):
             self._stop_completion = True
-            view.hide_popup()
 
-        if command_name in ["left_delete"]:
-            def _run_complete():
-                logger.debug("running left_delete")
-                view.run_command('auto_complete', {
-                    'api_completions_only': False,
-                    'disable_auto_insert':  True,
-                    'next_completion_if_showing': True,
-                    'auto_complete_commit_on_tab': True,
-                })
-            view.run_command('hide_auto_complete')
-
-            if self.should_run_competion_on_delete(view):
-                sublime.set_timeout_async(_run_complete, 0)
 
         if command_name in ["commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]:
 
@@ -340,19 +327,13 @@ class TabNineListener(sublime_plugin.EventListener):
 
         logger.debug("text command, command: {}, args: {}".format(
             command_name, args))
-        is_new_line_inserted = command_name == "insert" and args["characters"] == '\n'
 
         if command_name == "replace_completion_with_next_completion":
             self._replace_completion_with_next_completion = True
 
-        if command_name in ["left_delete"]:
-            self._left_deleted_selection = view.substr(view.sel()[0])
-            self._left_deleted_character = view.substr(
-                max(view.sel()[0].end() - 1, 0))
 
         if self.is_stop_completion(command_name, args):
             self._stop_completion = True
-            return
 
     def should_run_competion_on_delete(self, view):
         current_location = view.sel()[0].end()
