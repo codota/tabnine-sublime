@@ -82,7 +82,19 @@ class TabNineListener(sublime_plugin.EventListener):
         stop_completion_after_end_line = should_stop_completion_after_end_line(view, current_location)
         in_query_after_new_line = is_query_after_new_line(
             view, current_location)
-        return current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD and not self._stop_completion and not is_disabled and not stop_completion_after_end_line and not in_query_after_new_line
+
+        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD:
+            return True
+        if self._stop_completion:
+            return False
+        if is_disabled:
+            return False
+        if stop_completion_after_end_line:
+            return False
+        if in_query_after_new_line:
+            return False
+        
+        
 
     def on_selection_modified(self, view):
         self.on_any_event(view)
@@ -185,11 +197,11 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def handle_tabnine_commands(self, view, locations, prefix):
         if len(self._results) == 1 and self._old_prefix is None and prefix != "":
-            seperator = "::"
-            existing = view.substr(sublime.Region(
-                max(locations[0] - (len(prefix) + len(seperator)), 0), locations[0]))
-            is_tabNine_command = existing == "{}{}".format(seperator, prefix)
-            if is_tabNine_command:
+            tabnine_command = "::{}".format(prefix)
+            existing_text = view.substr(sublime.Region(
+                max(locations[0] - len(tabnine_command), 0), locations[0]))
+            is_tabnine_command = existing_text == tabnine_command
+            if is_tabnine_command:
                 view.show_popup(
                     self._results[0]["new_prefix"],
                     sublime.COOPERATE_WITH_AUTO_COMPLETE,
@@ -198,8 +210,6 @@ class TabNineListener(sublime_plugin.EventListener):
                     max_height=1200,
                     on_navigate=webbrowser.open,
                 )
-            else:
-                view.hide_popup()
 
     def on_activated_async(self, view):
         file_name = view.file_name()
@@ -327,6 +337,8 @@ class TabNineListener(sublime_plugin.EventListener):
 
         logger.debug("text command, command: {}, args: {}".format(
             command_name, args))
+        
+        view.hide_popup()
 
         if command_name == "replace_completion_with_next_completion":
             self._replace_completion_with_next_completion = True
@@ -335,12 +347,6 @@ class TabNineListener(sublime_plugin.EventListener):
         if self.is_stop_completion(command_name, args):
             self._stop_completion = True
 
-    def should_run_competion_on_delete(self, view):
-        current_location = view.sel()[0].end()
-        last_character = view.substr(max(current_location - 1, 0)).strip()
-        is_disabled = is_tabnine_disabled(view)
-        return last_character != "" and last_character != "\n" and self._left_deleted_character != "\n" and not "\n" in self._left_deleted_selection and not is_disabled
-
     def is_stop_completion(self, command_name, args):
         is_new_line_inserted = command_name == "insert" and args["characters"] == '\n'
         return command_name in STOP_COMPLETION_COMMANDS or is_new_line_inserted
@@ -348,42 +354,6 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_query_context(self, view, key, operator, operand, match_all):  # pylint: disable=W0613
         if key in  ["tab_nine_choice_available", "tab_nine_leader_key_available", "tab_nine_reverse_leader_key_available"]:
             return False
-
-def escape(s):
-    s = html.escape(s, quote=False)
-    s = s.replace(" ", "&nbsp;")
-    urls = [
-        ('https://tabnine.com/semantic', None, 'tabnine.com/semantic'),
-        ('tabnine.com/semantic', 'https://tabnine.com/semantic', 'tabnine.com/semantic'),
-        ('www.tabnine.com/buy', 'https://tabnine.com/buy', 'tabnine.com/buy'),
-        ('tabnine.com', 'https://tabnine.com', 'tabnine.com'),
-
-    ]
-    for url, navigate_to, display in urls:
-        if url in s:
-            if navigate_to is None:
-                navigate_to = url
-            s = s.replace(html.escape(url),
-                          '<a href="{}">{}</a>'.format(navigate_to, display))
-            break
-    return s
-
-
-def get_additional_detail(choice):
-    s = None
-    if 'documentation' in choice:
-        s = choice['documentation']
-    return s
-
-
-def format_documentation(documentation):
-    if isinstance(documentation, str):
-        return escape(documentation)
-    elif isinstance(documentation, dict) and 'kind' in documentation and documentation['kind'] == 'markdown' and 'value' in documentation:
-        return escape(documentation['value'])
-    else:
-        return escape(str(documentation))
-
 
 class OpenconfigCommand(sublime_plugin.TextCommand):
     def run(self, edit):

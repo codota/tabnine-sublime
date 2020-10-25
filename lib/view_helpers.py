@@ -1,5 +1,6 @@
 import sublime
 
+END_LINE_STOP_COMPLETION_CHARACTERS = ",;:"
 
 def get_before(view, char_limit):
         loc = view.sel()[0].begin()
@@ -14,13 +15,12 @@ def get_after(view, char_limit):
 def should_stop_completion_after_end_line(view, current_location):
     last_character = view.substr(max(current_location - 1, 0))
     end_of_line = view.line(current_location).end()
-    return end_of_line == current_location and last_character in ",;:"
+    return end_of_line == current_location and last_character in END_LINE_STOP_COMPLETION_CHARACTERS
 
 def is_query_after_new_line(view, current_location):
     last_region = view.substr(sublime.Region(
         max(current_location - 2, 0), current_location)).rstrip()
     is_query_after_new_line = last_region == "" or last_region == "\n"
-    print("is_query_after_new_line: ", is_query_after_new_line)
     return is_query_after_new_line
 
 def should_return_empty_list(view, locations, prefix):
