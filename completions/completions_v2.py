@@ -23,6 +23,8 @@ COMPLEATIONS_REQUEST_TRESHOLD = 1
 STOP_COMPLETION_COMMANDS = ["left_delete", "commit_completion", "insert_best_completion",
                             "replace_completion_with_next_completion", "toggle_comment", "insert_snippet"]
 
+COMPLETION_SELECTION_COMMANDS = ["commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]
+
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):  # pylint: disable=W0613,E0211
@@ -289,52 +291,54 @@ class TabNineListener(sublime_plugin.EventListener):
             if self.should_run_competion_on_delete(view):
                 sublime.set_timeout_async(_run_complete, 0)
 
-        if command_name in ["commit_completion", "insert_best_completion", "replace_completion_with_next_completion"]:
+        if command_name in COMPLETION_SELECTION_COMMANDS:
+            self.handle_selection(view)
 
-            current_location = view.sel()[0].end()
-            previous_location = self._last_query_location
-            end_of_line = view.line(sublime.Region(
-                current_location, current_location))
-            substitution = view.substr(sublime.Region(
-                previous_location, current_location))
+    def handle_selection(self, view):
+        current_location = view.sel()[0].end()
+        previous_location = self._last_query_location
+        end_of_line = view.line(sublime.Region(
+            current_location, current_location))
+        substitution = view.substr(sublime.Region(
+            previous_location, current_location))
 
-            existing_choice = next(
-                (x for x in self._results if x["new_prefix"] == self._completion_prefix + substitution), None)
+        existing_choice = next(
+            (x for x in self._results if x["new_prefix"] == self._completion_prefix + substitution), None)
 
-            if existing_choice is not None:
+        if existing_choice is not None:
 
-                if existing_choice["old_suffix"].strip():
+            if existing_choice["old_suffix"].strip():
 
-                    logger.debug("existing_choice: {}".format(existing_choice))
-                    logger.debug("old_suffix: {}".format(
-                        existing_choice["old_suffix"]))
-                    logger.debug("new_suffix: {}".format(
-                        existing_choice["new_suffix"]))
+                logger.debug("existing_choice: {}".format(existing_choice))
+                logger.debug("old_suffix: {}".format(
+                    existing_choice["old_suffix"]))
+                logger.debug("new_suffix: {}".format(
+                    existing_choice["new_suffix"]))
 
-                    end_search_location = min(
-                        current_location + len(substitution) + len(existing_choice["new_suffix"]), end_of_line.end())
+                end_search_location = min(
+                    current_location + len(substitution) + len(existing_choice["new_suffix"]), end_of_line.end())
 
-                    start_search_location = current_location + \
-                        len(existing_choice["new_suffix"])
+                start_search_location = current_location + \
+                    len(existing_choice["new_suffix"])
 
-                    after_substitution = view.substr(sublime.Region(
-                        start_search_location, end_search_location))
+                after_substitution = view.substr(sublime.Region(
+                    start_search_location, end_search_location))
 
-                    logger.debug("substitution: {}".format(substitution))
-                    logger.debug("after_substitution: {}".format(
-                        after_substitution))
+                logger.debug("substitution: {}".format(substitution))
+                logger.debug("after_substitution: {}".format(
+                    after_substitution))
 
-                    old_suffix_index = after_substitution.find(
-                        existing_choice["old_suffix"])
-                    if old_suffix_index != -1:
+                old_suffix_index = after_substitution.find(
+                    existing_choice["old_suffix"])
+                if old_suffix_index != -1:
 
-                        start_erase_location = start_search_location + old_suffix_index
-                        args = {
-                            "begin": start_erase_location,
-                            "end": start_erase_location + len(existing_choice["old_suffix"]),
-                            "old_suffix": existing_choice["old_suffix"]
-                        }
-                        view.run_command("tab_nine_post_substitution", args)
+                    start_erase_location = start_search_location + old_suffix_index
+                    args = {
+                        "begin": start_erase_location,
+                        "end": start_erase_location + len(existing_choice["old_suffix"]),
+                        "old_suffix": existing_choice["old_suffix"]
+                    }
+                    view.run_command("tab_nine_post_substitution", args)
 
     def on_text_command(self, view, command_name, args):
 
