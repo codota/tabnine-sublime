@@ -83,8 +83,6 @@ class TabNineListener(sublime_plugin.EventListener):
         in_query_after_new_line = is_query_after_new_line(
             view, current_location)
 
-        if current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD:
-            return True
         if self._stop_completion:
             return False
         if is_disabled:
@@ -93,8 +91,7 @@ class TabNineListener(sublime_plugin.EventListener):
             return False
         if in_query_after_new_line:
             return False
-        
-        
+        return current_location - self._last_query_location >= COMPLEATIONS_REQUEST_TRESHOLD
 
     def on_selection_modified(self, view):
         self.on_any_event(view)
