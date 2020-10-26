@@ -23,6 +23,7 @@ COMPLEATIONS_REQUEST_TRESHOLD = 1
 STOP_COMPLETION_COMMANDS = ["left_delete", "commit_completion", "insert_best_completion",
                             "replace_completion_with_next_completion", "toggle_comment", "insert_snippet"]
 
+STARS_PREFIX = "✨"
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):  # pylint: disable=W0613,E0211
@@ -98,7 +99,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_activated(self, view):
         self.on_any_event(view)
-        view.set_status("tabnine-status", "TabNine")
+        view.set_status("tabnine-status", STARS_PREFIX + "TabNine")
 
     def on_query_completions(self, view, prefix, locations):
         def _run_complete():
@@ -186,8 +187,10 @@ class TabNineListener(sublime_plugin.EventListener):
             return (self._completions, flags)
 
     def get_completion(self):
-        return [(r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get(
-                "new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
+        return [("{}\t{}".format(r.get("new_prefix", r.get("detail", "TabNine")), "{}$0{}".format(r.get(
+                "new_prefix"),r.get("new_suffix", "")))) for r in self._results]
+        # return [(STARS_PREFIX + r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get(
+        #         "new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
 
     def has_competions(self):
         return len(self._completions) > 0
