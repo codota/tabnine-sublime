@@ -189,8 +189,6 @@ class TabNineListener(sublime_plugin.EventListener):
     def get_completion(self):
         return [("{}{}\t{}".format(STARS_PREFIX, r.get("new_prefix"), r.get("detail", "TabNine")), "{}$0{}".format(r.get(
                 "new_prefix"),r.get("new_suffix", ""))) for r in self._results]
-        # return [(STARS_PREFIX + r.get("new_prefix") + "\t" + r.get("detail", "TabNine"), r.get(
-        #         "new_prefix") + "$0" + r.get("new_suffix", "")) for r in self._results]
 
     def has_competions(self):
         return len(self._completions) > 0
