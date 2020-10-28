@@ -67,6 +67,15 @@ You may opt in to TabNine Deep Cloud, which allows you to use TabNine’s server
 Contact us at enterprise@tabnine.com.
 </p>
 </details>
+<br/>
+
+### **Development:**
+___
+In order to work with plugin source code, don’t forget to install [pre-commit](https://github.com/pre-commit/pre-commit) dependency. After checking out source code, go to repo folder and run
+
+```sh
+pip install -r requirements-dev.txt
+```
 
 ### **Note:**
 ___
