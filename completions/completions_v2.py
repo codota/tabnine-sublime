@@ -99,7 +99,7 @@ class TabNineListener(sublime_plugin.EventListener):
         in_query_after_new_line = is_query_after_new_line(view, current_location)
 
         is_selector_matched = view.match_selector(current_location, "source | text")
-        is_wrong_view = sublime.active_window().active_view().id() != view.id()
+        is_wrong_view = active_view().id() != view.id()
 
         if is_wrong_view:
             return False
@@ -157,7 +157,7 @@ class TabNineListener(sublime_plugin.EventListener):
             if self._results and self._user_message and view.window():
                 view.window().status_message(" ".join(self._user_message))
 
-            active_view().run_command(
+            view.run_command(
                 "auto_complete",
                 {
                     "api_completions_only": True,
