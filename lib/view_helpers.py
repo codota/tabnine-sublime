@@ -15,6 +15,11 @@ def get_after(view, char_limit):
     return view.substr(sublime.Region(loc, end)), end == view.size()
 
 
+def active_view():
+    """Return currently active view"""
+    return sublime.active_window().active_view()
+
+
 def should_stop_completion_after_end_line(view, current_location):
     last_character = view.substr(max(current_location - 1, 0))
     end_of_line = view.line(current_location).end()
@@ -34,8 +39,10 @@ def is_query_after_new_line(view, current_location):
 
 def should_return_empty_list(view, locations, prefix):
     last_command_insert_snippet = view.command_history(-1)[0] == "insert_snippet"
+    wrong_view = active_view().id() != view.id()
     return (
-        should_stop_completion_after_end_line(view, locations[0])
+        wrong_view
+        or should_stop_completion_after_end_line(view, locations[0])
         or prefix.strip() == ""
         and last_command_insert_snippet
         or not view.match_selector(locations[0], "source | text")
