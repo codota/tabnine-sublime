@@ -6,7 +6,6 @@ import time
 from shutil import copyfile
 import os
 
-
 from ..lib.tab_nine_process import tabnine_proc
 from ..lib import logger
 from ..lib.settings import is_tabnine_disabled
@@ -16,6 +15,7 @@ from ..lib.view_helpers import (
     should_stop_completion_after_end_line,
     is_query_after_new_line,
     should_return_empty_list,
+    active_view,
 )
 
 SETTINGS_PATH = "TabNine.sublime-settings"
@@ -29,6 +29,7 @@ STOP_COMPLETION_COMMANDS = [
     "replace_completion_with_next_completion",
     "toggle_comment",
     "insert_snippet",
+    "undo",
 ]
 
 STARS_PREFIX = "✨"
@@ -75,13 +76,13 @@ class TabNineListener(sublime_plugin.EventListener):
 
         def _run_complete():
             logger.debug("running in on_modified")
-            view.run_command("hide_auto_complete")
-            view.run_command(
+            active_view().run_command("hide_auto_complete")
+            active_view().run_command(
                 "auto_complete",
                 {
                     "api_completions_only": False,
                     "disable_auto_insert": True,
-                    "next_completion_if_showing": True,
+                    "next_completion_if_showing": False,
                     "auto_complete_commit_on_tab": True,
                 },
             )
@@ -117,7 +118,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_activated(self, view):
         self.on_any_event(view)
-        view.set_status("tabnine-status", STARS_PREFIX + "TabNine")
+        view.set_status("tabnine-status", "TabNine " + STARS_PREFIX)
 
     def on_query_completions(self, view, prefix, locations):
         def _run_complete():
@@ -151,12 +152,12 @@ class TabNineListener(sublime_plugin.EventListener):
             if self._results and self._user_message and view.window():
                 view.window().status_message(" ".join(self._user_message))
 
-            view.run_command(
+            active_view().run_command(
                 "auto_complete",
                 {
-                    "api_completions_only": False,
+                    "api_completions_only": True,
                     "disable_auto_insert": True,
-                    "next_completion_if_showing": True,
+                    "next_completion_if_showing": False,
                     "auto_complete_commit_on_tab": True,
                 },
             )
@@ -174,17 +175,17 @@ class TabNineListener(sublime_plugin.EventListener):
 
         if self._replace_completion_with_next_completion:
             self._replace_completion_with_next_completion = False
-            return self._completions
+            return self.get_completions_with_flags()
 
         if self._last_query_location == locations[0] and self._last_location is None:
             if len(self._completions) == 0 and prefix == "":
                 self._last_location = locations[0]
-                view.run_command("hide_auto_complete")
+                active_view().run_command("hide_auto_complete")
                 sublime.set_timeout_async(_run_complete, 0)
                 return EMPTY_COMPLETION_LIST
 
             if self.has_competions():
-                return self._completions
+                return (self._completions, sublime.INHIBIT_WORD_COMPLETIONS)
             else:
                 return EMPTY_COMPLETION_LIST
 
@@ -193,7 +194,7 @@ class TabNineListener(sublime_plugin.EventListener):
         self._old_prefix = None
         if self._last_location != locations[0]:
             self._last_location = locations[0]
-            view.run_command("hide_auto_complete")
+            active_view().run_command("hide_auto_complete")
             sublime.set_timeout_async(_run_complete, 0)
 
             return EMPTY_COMPLETION_LIST
@@ -205,21 +206,24 @@ class TabNineListener(sublime_plugin.EventListener):
 
             logger.debug("completions: {}".format(self._completions))
 
-            flags = sublime.INHIBIT_WORD_COMPLETIONS
-            if len(self._completions) > 0:
-                flags = 0
-            return (self._completions, flags)
+            return self.get_completions_with_flags()
 
     def get_completion(self):
         return [
-            (
-                "{}{}\t{}".format(
-                    STARS_PREFIX, r.get("new_prefix"), r.get("detail", "TabNine")
+            [
+                "{}\t{} {}".format(
+                    r.get("new_prefix"), r.get("detail", "TabNine"), STARS_PREFIX
                 ),
                 "{}$0{}".format(r.get("new_prefix"), r.get("new_suffix", "")),
-            )
+            ]
             for r in self._results
         ]
+
+    def get_completions_with_flags(self):
+        flags = 0
+        if self.has_competions():
+            flags = sublime.INHIBIT_WORD_COMPLETIONS
+        return (self._completions, flags)
 
     def has_competions(self):
         return len(self._completions) > 0

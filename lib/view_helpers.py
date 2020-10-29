@@ -15,6 +15,11 @@ def get_after(view, char_limit):
     return view.substr(sublime.Region(loc, end)), end == view.size()
 
 
+def active_view():
+    """Return currently active view"""
+    return sublime.active_window().active_view()
+
+
 def should_stop_completion_after_end_line(view, current_location):
     last_character = view.substr(max(current_location - 1, 0))
     end_of_line = view.line(current_location).end()
