@@ -63,8 +63,6 @@ class TabNineListener(sublime_plugin.EventListener):
         self._stop_completion = True
         self._replace_completion_with_next_completion = False
         self._completions = []
-        self._left_deleted_selection = None
-        self._left_deleted_character = None
 
     def on_modified(self, view):
         logger.debug("in on_modified")
