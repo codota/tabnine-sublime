@@ -39,8 +39,10 @@ def is_query_after_new_line(view, current_location):
 
 def should_return_empty_list(view, locations, prefix):
     last_command_insert_snippet = view.command_history(-1)[0] == "insert_snippet"
+    wrong_view = sublime.active_window().active_view().id() != view.id()
     return (
-        should_stop_completion_after_end_line(view, locations[0])
+        wrong_view
+        or should_stop_completion_after_end_line(view, locations[0])
         or prefix.strip() == ""
         and last_command_insert_snippet
         or not view.match_selector(locations[0], "source | text")
