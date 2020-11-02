@@ -18,10 +18,10 @@ if _is_ST3:
     prefix = None
 
 
-from .lib.tab_nine_process import tabnine_proc  # noqa E402
+from .lib.requests import get_capabilities, set_state  # noqa E402
 from .lib.settings import is_native_auto_complete  # noqa E402
 
-capabilities = tabnine_proc.get_capabilities()
+capabilities = get_capabilities()
 is_v2 = False
 
 if is_native_auto_complete() or (
@@ -37,7 +37,7 @@ else:
 class DisableViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         self.view.settings().set("tabnine-disabled", True)
-        tabnine_proc.set_state({"State": {"state_type": "disable-view"}})
+        set_state({"State": {"state_type": "disable-view"}})
 
     def is_visible(self, *args):
         return is_v2 and not self.view.settings().get("tabnine-disabled", False)
@@ -46,7 +46,7 @@ class DisableViewCommand(sublime_plugin.TextCommand):
 class EnableViewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         self.view.settings().set("tabnine-disabled", False)
-        tabnine_proc.set_state({"State": {"state_type": "enable-view"}})
+        set_state({"State": {"state_type": "enable-view"}})
 
     def is_visible(self, *args):
         return is_v2 and self.view.settings().get("tabnine-disabled", False)

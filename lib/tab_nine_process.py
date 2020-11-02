@@ -67,8 +67,7 @@ class TabNineProcess:
         self.tabnine_proc = None
         self.num_restarts = 0
 
-    @staticmethod
-    def run_tabnine(inheritStdio=False, additionalArgs=[]):
+    def run_tabnine(self, inheritStdio=False, additionalArgs=[]):
         binary_dir = os.path.join(TabNineProcess.install_directory, "..", "binaries")
         settings = get_settings_eager()
         tabnine_path = settings.get("custom_binary_path", None)
@@ -88,9 +87,9 @@ class TabNineProcess:
         args += [
             "--client-metadata",
             "clientVersion=" + sublime_version,
-            "clientApiVersion=" + sublime_version,
             "pluginVersion=" + plugin_version,
             "nativeAutoComplete=" + str(is_native_auto_complete()),
+            "ide-restart-counter=" + str(self.num_restarts),
         ]
         return subprocess.Popen(
             args,
@@ -106,7 +105,7 @@ class TabNineProcess:
                 self.tabnine_proc.terminate()
             except Exception:  # pylint: disable=W0703
                 pass
-        self.tabnine_proc = TabNineProcess.run_tabnine()
+        self.tabnine_proc = self.run_tabnine()
 
     def request(self, req):
         if self.tabnine_proc is None:
@@ -119,7 +118,7 @@ class TabNineProcess:
                 self.restart_tabnine_proc()
             else:
                 return None
-        req = {"version": "2.0.0", "request": req}
+        req = {"version": "2.0.2", "request": req}
         req = dumps(req)
         req += "\n"
         try:
@@ -134,16 +133,6 @@ class TabNineProcess:
             if self.num_restarts < MAX_RESTARTS:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
-
-    def get_capabilities(self):
-        capabilities = self.request({"Features": {}})
-        return capabilities
-
-    def uninstalling(self):
-        self.request({"Uninstalling": {}})
-
-    def set_state(self, state):
-        self.request({"SetState": {"state_type": state}})
 
 
 global tabnine_proc
