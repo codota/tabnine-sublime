@@ -1,5 +1,7 @@
 from . import logger
 from .tab_nine_process import tabnine_proc
+from .completion_origin import CompletionOrigin
+import os
 
 
 def get_capabilities():
@@ -57,36 +59,40 @@ def set_completion_state(
     net_length = len(substitution)
     request = {
         "Selection": {
-            "language": [x for x in file_name.split(".")][-1],
+            "language": os.path.splitext(file_name)[1][1:],
             "length": length,
             "net_length": net_length,
             "strength": selected_completion.get("detail", ""),
-            "origin": selected_completion.get("origin", ""),
+            "origin": selected_completion.get("origin", CompletionOrigin.UNKNOWN),
             "index": completions.index(selected_completion),
             "line_prefix_length": line_prefix_length,
             "line_net_prefix_length": line_prefix_length - (length - net_length),
             "line_suffix_length": current_line.end() - current_location,
             "num_of_suggestions": len(completions),
-            "num_of_vanilla_suggestions": len(
-                [x for x in completions if x["origin"] == "VANILLA"]
+            "num_of_vanilla_suggestions": count_by_origin(
+                completions, CompletionOrigin.VANILLA
             ),
-            "num_of_deep_local_suggestions": len(
-                [x for x in completions if x["origin"] == "LOCAL"]
+            "num_of_deep_local_suggestions": count_by_origin(
+                completions, CompletionOrigin.LOCAL
             ),
-            "num_of_deep_cloud_suggestions": len(
-                [x for x in completions if x["origin"] == "CLOUD"]
+            "num_of_deep_cloud_suggestions": count_by_origin(
+                completions, CompletionOrigin.CLOUD
             ),
-            "num_of_lsp_suggestions": len(
-                [x for x in completions if x["origin"] == "LSP"]
+            "num_of_lsp_suggestions": count_by_origin(
+                completions, CompletionOrigin.LSP
             ),
             "suggestions": [
                 {
                     "length": len(x["new_prefix"]),
                     "strength": x.get("detail", ""),
-                    "origin": x.get("origin", ""),
+                    "origin": x.get("origin", CompletionOrigin.UNKNOWN),
                 }
                 for x in completions
             ],
         }
     }
     set_state(request)
+
+
+def count_by_origin(completions, origin):
+    return len([x for x in completions if x["origin"] == origin])
