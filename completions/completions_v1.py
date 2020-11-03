@@ -8,7 +8,7 @@ import time
 import subprocess
 from package_control import package_manager
 from threading import Timer
-from ..lib.tab_nine_process import tabnine_proc
+from ..lib.requests import uninstalling, open_config, prefetch, autocomplete
 
 SETTINGS_PATH = "TabNine.sublime-settings"
 MAX_RESTARTS = 10
@@ -166,8 +166,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_activated_async(self, view):
         file_name = view.file_name()
         if file_name is not None:
-            request = {"Prefetch": {"filename": file_name}}
-            tabnine_proc.request(request)
+            prefetch(file_name)
 
     def on_any_event(self, view):
         if view.window() is None:
@@ -273,17 +272,14 @@ class TabNineListener(sublime_plugin.EventListener):
             return
         self.just_pressed_tab = False
         max_num_results = self.max_num_results()
-        request = {
-            "Autocomplete": {
-                "before": self.before,
-                "after": self.after,
-                "filename": view.file_name(),
-                "region_includes_beginning": self.region_includes_beginning,
-                "region_includes_end": self.region_includes_end,
-                "max_num_results": max_num_results,
-            }
-        }
-        response = tabnine_proc.request(request)
+        response = autocomplete(
+            self.before,
+            self.after,
+            view.file_name(),
+            self.region_includes_beginning,
+            self.region_includes_end,
+            max_num_results,
+        )
         if response is None or not self.autocompleting:
             self.clear_delay_timer()
             return
@@ -546,13 +542,11 @@ def add_execute_permission(path):
 
 class OpenconfigCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        request = {"Configuration": {}}
-
-        tabnine_proc.request(request)
+        open_config()
 
 
 def plugin_unloaded():
     from package_control import events
 
     if events.remove("TabNine"):
-        tabnine_proc.uninstalling()
+        uninstalling()

@@ -6,7 +6,14 @@ import time
 from shutil import copyfile
 import os
 
-from ..lib.tab_nine_process import tabnine_proc
+from ..lib.requests import (
+    uninstalling,
+    open_config,
+    prefetch,
+    autocomplete,
+    set_state,
+    set_completion_state,
+)
 from ..lib import logger
 from ..lib.settings import is_tabnine_disabled
 from ..lib.view_helpers import (
@@ -17,6 +24,8 @@ from ..lib.view_helpers import (
     should_return_empty_list,
     active_view,
 )
+
+from .commit_completion_handler import handle_completion
 
 SETTINGS_PATH = "TabNine.sublime-settings"
 AUTOCOMPLETE_CHAR_LIMIT = 100000
@@ -30,6 +39,7 @@ STOP_COMPLETION_COMMANDS = [
     "toggle_comment",
     "insert_snippet",
     "undo",
+    "paste",
 ]
 
 STARS_PREFIX = "✨"
@@ -127,17 +137,14 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_query_completions(self, view, prefix, locations):
         def _run_complete():
-            request = {
-                "Autocomplete": {
-                    "before": self.before,
-                    "after": self.after,
-                    "filename": view.file_name(),
-                    "region_includes_beginning": self.region_includes_beginning,
-                    "region_includes_end": self.region_includes_end,
-                    "max_num_results": 5,
-                }
-            }
-            response = tabnine_proc.request(request)
+
+            response = autocomplete(
+                self.before,
+                self.after,
+                view.file_name(),
+                self.region_includes_beginning,
+                self.region_includes_end,
+            )
             if response is None:
                 self._results = []
                 self._user_message = []
@@ -255,8 +262,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def on_activated_async(self, view):
         file_name = view.file_name()
         if file_name is not None:
-            request = {"Prefetch": {"filename": file_name}}
-            tabnine_proc.request(request)
+            prefetch(file_name)
 
     def on_any_event(self, view):
         if view.window() is None:
@@ -328,62 +334,9 @@ class TabNineListener(sublime_plugin.EventListener):
             "insert_best_completion",
             "replace_completion_with_next_completion",
         ]:
-
-            current_location = view.sel()[0].end()
-            previous_location = self._last_query_location
-            end_of_line = view.line(sublime.Region(current_location, current_location))
-            substitution = view.substr(
-                sublime.Region(previous_location, current_location)
+            handle_completion(
+                view, self._results, self._last_query_location, self._completion_prefix
             )
-
-            existing_choice = next(
-                (
-                    x
-                    for x in self._results
-                    if x["new_prefix"] == self._completion_prefix + substitution
-                ),
-                None,
-            )
-
-            if existing_choice is not None:
-
-                if existing_choice["old_suffix"].strip():
-
-                    logger.debug("existing_choice: {}".format(existing_choice))
-                    logger.debug("old_suffix: {}".format(existing_choice["old_suffix"]))
-                    logger.debug("new_suffix: {}".format(existing_choice["new_suffix"]))
-
-                    end_search_location = min(
-                        current_location
-                        + len(substitution)
-                        + len(existing_choice["new_suffix"]),
-                        end_of_line.end(),
-                    )
-
-                    start_search_location = current_location + len(
-                        existing_choice["new_suffix"]
-                    )
-
-                    after_substitution = view.substr(
-                        sublime.Region(start_search_location, end_search_location)
-                    )
-
-                    logger.debug("substitution: {}".format(substitution))
-                    logger.debug("after_substitution: {}".format(after_substitution))
-
-                    old_suffix_index = after_substitution.find(
-                        existing_choice["old_suffix"]
-                    )
-                    if old_suffix_index != -1:
-
-                        start_erase_location = start_search_location + old_suffix_index
-                        args = {
-                            "begin": start_erase_location,
-                            "end": start_erase_location
-                            + len(existing_choice["old_suffix"]),
-                            "old_suffix": existing_choice["old_suffix"],
-                        }
-                        view.run_command("tab_nine_post_substitution", args)
 
     def on_text_command(self, view, command_name, args):
 
@@ -414,9 +367,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
 class OpenconfigCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        request = {"Configuration": {}}
-
-        tabnine_proc.request(request)
+        open_config()
 
 
 def plugin_loaded():
@@ -475,4 +426,4 @@ def plugin_unloaded():
 
     if events.remove("TabNine"):
         _revert_config()
-        tabnine_proc.uninstalling()
+        uninstalling()
