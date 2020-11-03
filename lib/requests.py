@@ -100,4 +100,4 @@ def count_by_origin(completions, origin):
 
 def get_language(file_name):
     parts = file_name.split(".")
-    return parts[min(len(parts), 1)] or "undefined"
+    return parts[-1] if len(parts) > 1 else "undefined"
