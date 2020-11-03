@@ -59,7 +59,7 @@ def set_completion_state(
     net_length = len(substitution)
     request = {
         "Selection": {
-            "language": os.path.splitext(file_name)[1][1:],
+            "language": get_language(file_name),
             "length": length,
             "net_length": net_length,
             "strength": selected_completion.get("detail", ""),
@@ -96,3 +96,8 @@ def set_completion_state(
 
 def count_by_origin(completions, origin):
     return len([x for x in completions if x["origin"] == origin])
+
+
+def get_language(file_name):
+    parts = file_name.split(".")
+    return parts[min(len(parts), 1)] or "undefined"
