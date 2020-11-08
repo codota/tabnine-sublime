@@ -42,7 +42,7 @@ STOP_COMPLETION_COMMANDS = [
     "paste",
 ]
 
-STARS_PREFIX = "✨"
+ATTRIBUTION_ELEMENT = "⌬"
 
 
 class TabNineCommand(sublime_plugin.TextCommand):
@@ -133,7 +133,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_activated(self, view):
         self.on_any_event(view)
-        view.set_status("tabnine-status", "TabNine " + STARS_PREFIX)
+        view.set_status("tabnine-status", ATTRIBUTION_ELEMENT + " TabNine")
 
     def on_query_completions(self, view, prefix, locations):
         def _run_complete():
@@ -223,9 +223,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def get_completion(self):
         return [
             [
-                "{}\t{} {}".format(
-                    r.get("new_prefix"), r.get("detail", "TabNine"), STARS_PREFIX
-                ),
+                "{}\t{} {}".format(r.get("new_prefix"), ATTRIBUTION_ELEMENT, "TabNine"),
                 "{}$0{}".format(r.get("new_prefix"), r.get("new_suffix", "")),
             ]
             for r in self._results

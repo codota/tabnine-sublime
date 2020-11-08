@@ -7,6 +7,7 @@ repos:
         rev: stable
         hooks:
         - id: black
+          entry: bash -c 'black "$@"; git add -u' --
           language_version: python3
     -   repo: https://gitlab.com/pycqa/flake8
         rev: 3.7.9
