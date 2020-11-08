@@ -223,9 +223,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def get_completion(self):
         return [
             [
-                "{}\t{} {}".format(
-                    r.get("new_prefix"), r.get("detail", "TabNine"), STARS_PREFIX
-                ),
+                "{}\t{}{}".format(r.get("new_prefix"), "TabNine", STARS_PREFIX),
                 "{}$0{}".format(r.get("new_prefix"), r.get("new_suffix", "")),
             ]
             for r in self._results
