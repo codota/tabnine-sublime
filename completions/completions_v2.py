@@ -109,7 +109,11 @@ class TabNineListener(sublime_plugin.EventListener):
         in_query_after_new_line = is_query_after_new_line(view, current_location)
 
         is_selector_matched = view.match_selector(current_location, "source | text")
-        is_wrong_view = active_view().id() != view.id()
+
+        current_active_view = active_view()
+        is_wrong_view = current_active_view is None or (
+            current_active_view.id() != view.id()
+        )
 
         if is_wrong_view:
             return False
