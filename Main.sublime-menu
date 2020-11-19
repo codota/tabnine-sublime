@@ -6,7 +6,7 @@
                 "id": "package-settings",
                 "children": [
                     {
-                        "caption": "TabNine",
+                        "caption": "tabnine",
                         "children": [
                             {
                                 "caption": "Settings - Default",
@@ -44,7 +44,7 @@
                             },
                             {
                                 "id" : "example",
-                                "caption" : "Open TabNine Configuration",
+                                "caption" : "Open Tabnine Configuration",
                                 "command" : "openconfig"
                             }
                         ]

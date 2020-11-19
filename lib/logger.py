@@ -5,7 +5,7 @@ import json
 
 
 def info(msg):
-    print("[TabNine] {} | {}".format(_time(), msg))
+    print("[tabtine] {} | {}".format(_time(), msg))
 
 
 def debug(msg, if_development=True):

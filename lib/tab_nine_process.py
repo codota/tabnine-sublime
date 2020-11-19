@@ -56,7 +56,7 @@ def get_tabnine_path(binary_dir):
         path = join_path(version, translation[key])
         if os.path.isfile(path):
             add_execute_permission(path)
-            print("TabNine: starting version", version)
+            print("Tabnine: starting version", version)
             return path
 
 
@@ -111,7 +111,7 @@ class TabNineProcess:
         if self.tabnine_proc is None:
             self.restart_tabnine_proc()
         if self.tabnine_proc.poll():
-            print("TabNine subprocess is dead")
+            print("Tabnine subprocess is dead")
             if self.num_restarts < MAX_RESTARTS:
                 print("Restarting it...")
                 self.num_restarts += 1
@@ -129,7 +129,7 @@ class TabNineProcess:
             result = loads(result)
             return result
         except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
-            print("Exception while interacting with TabNine subprocess:", e)
+            print("Exception while interacting with tabnine subprocess:", e)
             if self.num_restarts < MAX_RESTARTS:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()

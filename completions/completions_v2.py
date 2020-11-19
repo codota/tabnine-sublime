@@ -48,7 +48,7 @@ ATTRIBUTION_ELEMENT = "⌬"
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):  # pylint: disable=W0613,E0211
         logger.info(
-            "TabNine commands are supposed to be intercepted by TabNineListener"
+            "Tabnine commands are supposed to be intercepted by TabNineListener"
         )
 
 
@@ -137,7 +137,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
     def on_activated(self, view):
         self.on_any_event(view)
-        view.set_status("tabnine-status", ATTRIBUTION_ELEMENT + " TabNine")
+        view.set_status("tabnine-status", ATTRIBUTION_ELEMENT + " tabnine")
 
     def on_query_completions(self, view, prefix, locations):
         def _run_complete():
@@ -227,7 +227,7 @@ class TabNineListener(sublime_plugin.EventListener):
     def get_completion(self):
         return [
             [
-                "{}\t{} {}".format(r.get("new_prefix"), ATTRIBUTION_ELEMENT, "TabNine"),
+                "{}\t{} {}".format(r.get("new_prefix"), ATTRIBUTION_ELEMENT, "tabnine"),
                 "{}$0{}".format(r.get("new_prefix"), r.get("new_suffix", "")),
             ]
             for r in self._results

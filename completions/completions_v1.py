@@ -25,7 +25,7 @@ PACK_MANAGER = package_manager.PackageManager()
 
 class TabNineCommand(sublime_plugin.TextCommand):
     def run(*args, **kwargs):  # pylint: disable=W0613,E0211
-        print("TabNine commands are supposed to be intercepted by TabNineListener")
+        print("Tabnine commands are supposed to be intercepted by TabNineListener")
 
 
 class TabNineLeaderKeyCommand(TabNineCommand):
@@ -82,7 +82,7 @@ class TabNineSubstituteCommand(sublime_plugin.TextCommand):
             if observed_prefix != expected_prefix:
                 new_begin = self.view.word(sel).begin()
                 print(
-                    'TabNine expected prefix "{}" but found prefix "{}", falling back to substituting from word beginning: "{}"'.format(
+                    'Tabnine expected prefix "{}" but found prefix "{}", falling back to substituting from word beginning: "{}"'.format(
                         expected_prefix,
                         observed_prefix,
                         self.view.substr(sublime.Region(new_begin, sel.begin())),
