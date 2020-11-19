@@ -1,15 +1,15 @@
 [
     {
-        "caption": "tabnine: Open Configuration",
+        "caption": "⌬ tabnine: Open Configuration",
         "command": "openconfig"
     },{
-    	"caption": "tabnine: Disable Current View",
+    	"caption": "⌬ tabnine: Disable Current View",
         "command": "disable_view"	
     },{
-    	"caption": "tabnine: Enable Current View",
+    	"caption": "⌬ tabnine: Enable Current View",
         "command": "enable_view"	
     },{
-    	"caption": "tabnine: Enable Native Auto Complete",
+    	"caption": "⌬ tabnine: Enable Native Auto Complete",
         "command": "enable_native_auto_complete"
     }
 ]
