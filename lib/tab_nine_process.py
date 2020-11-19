@@ -129,7 +129,7 @@ class TabNineProcess:
             result = loads(result)
             return result
         except (IOError, OSError, UnicodeDecodeError, ValueError) as e:
-            print("Exception while interacting with tabnine subprocess:", e)
+            print("Exception while interacting with Tabnine subprocess:", e)
             if self.num_restarts < MAX_RESTARTS:
                 self.num_restarts += 1
                 self.restart_tabnine_proc()
