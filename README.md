@@ -48,7 +48,7 @@ Other than for the purpose of fulfilling your query, your data isn’t used, sav
 ### auto_complete: false
 ___
 The Tabnine sublime plugin disables sublime's [built in autocomplete](https://www.sublimetext.com/docs/3/auto_complete.html).  
-It does that, because sublime's builtin autocomplete does not support all the features required by TabTine.  
+It does that, because sublime's builtin autocomplete does not support all the features required by Tabnine.  
 If you ever uninstall Tabnine, remember to re-enable it.
 
 ### **Frequently Asked Questions:**
