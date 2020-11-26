@@ -6,3 +6,5 @@ binaries/*
 registration_key
 sig
 auth
+.idea/
+*.iml
