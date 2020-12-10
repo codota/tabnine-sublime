@@ -49,11 +49,28 @@ def get_tabnine_path(binary_dir):
         ("windows", "x32"): "i686-pc-windows-gnu/TabNine.exe",
         ("windows", "x64"): "x86_64-pc-windows-gnu/TabNine.exe",
     }
-    versions = os.listdir(binary_dir)
-    versions.sort(key=parse_semver, reverse=True)
+
+    platform_key = sublime.platform(), sublime.arch()
+    platform = translation[platform_key]
+
+    versions = []
+
+    # if a .active file exists and points to an existing binary than use it
+    active_path = join_path(binary_dir, ".active")
+    if os.path.exists(active_path):
+        version = open(active_path).read().strip()
+        version_path = join_path(binary_dir, version)
+        active_tabnine_path = join_path(version_path, platform)
+        if os.path.exists(active_tabnine_path):
+            versions = [version_path]
+
+    # if no .active file then fallback to taking the latest
+    if len(versions) == 0:
+        versions = os.listdir(binary_dir)
+        versions.sort(key=parse_semver, reverse=True)
+
     for version in versions:
-        key = sublime.platform(), sublime.arch()
-        path = join_path(version, translation[key])
+        path = join_path(version, platform)
         if os.path.isfile(path):
             add_execute_permission(path)
             print("Tabnine: starting version", version)
