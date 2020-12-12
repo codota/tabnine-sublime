@@ -23,6 +23,7 @@ from ..lib.view_helpers import (
     is_query_after_new_line,
     should_return_empty_list,
     active_view,
+    escape_tab_stop_sign,
 )
 
 from .commit_completion_handler import handle_completion
@@ -228,7 +229,9 @@ class TabNineListener(sublime_plugin.EventListener):
         return [
             [
                 "{}\t{} {}".format(r.get("new_prefix"), ATTRIBUTION_ELEMENT, "tabnine"),
-                "{}$0{}".format(r.get("new_prefix"), r.get("new_suffix", "")),
+                "{}$0{}".format(
+                    escape_tab_stop_sign(r.get("new_prefix")), r.get("new_suffix", "")
+                ),
             ]
             for r in self._results
         ]

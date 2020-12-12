@@ -1,4 +1,5 @@
 import sublime
+import re
 
 END_LINE_STOP_COMPLETION_CHARACTERS = ",;:"
 
@@ -48,3 +49,7 @@ def should_return_empty_list(view, locations, prefix):
         or not view.match_selector(locations[0], "source | text")
         or is_query_after_new_line(view, locations[0])
     )
+
+
+def escape_tab_stop_sign(value):
+    return re.sub(r"\$", "\\$", value)
