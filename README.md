@@ -1,73 +1,69 @@
+[twitter-shield]: https://img.shields.io/twitter/follow/Tabnine_?style=social
+[twitter-url]: http://bit.ly/Tabnine_Twitter
+[github-shield]: https://img.shields.io/github/stars/codota/Tabnine?style=social
+[github-url]: http://bit.ly/Tabnine_Git
+[youtube-shield]: https://img.shields.io/youtube/views/TKLkXh_c-Gw?style=social
+[youtube-url]: http://bit.ly/T9_YouTube
+
+[![Github Repo][github-shield]][github-url]
+[![Youtube Demo Video][youtube-shield]][youtube-url]
+[![Twitter Follow][twitter-shield]][twitter-url]
+
 ## **Tabnine For Sublime**
 
+Tabnine is a powerful Artificial Intelligence assistant designed to help you code faster, reduce mistakes, and discover best coding practices - without ever leaving the comfort of VSCode.
+​
+Tabnine studies publicly shared code and use A.I deep learning algorithms that provide us with the ability to predict your next coding needs and suggest one-click code completion.
+​
+Tabnine works with all major programming languages including JavaScript, Python, TypeScript, PHP, C/C++, HTML/CSS, Go, Java, Ruby, C#, Rust, SQL, Bash, Kotlin, Julia, Lua, OCaml, Perl, Haskell, and React.
+​
+We believe that coding is like Lego: Imagination is your only limit.
+We’re here to help provide you with the perfect code building blocks at the right time
+​
+No more memorizing coding syntax, no more worrying about typos, no more neglecting to add that crucial comma, or even search for coding solutions online. Start reducing your development costs, deliver reliable code faster, and explore best coding practices.
+​
+Tabnine is trusted by more than a million developers worldwide. [Join us Now](https://www.tabnine.com/install) and enjoy the coding future, today. It’s Free!
+​
+![With and without Tabnine](https://github.com/codota/TabNine/raw/master/with-and-without-tabnine.gif)
 
-### **Tabnine Overview:**
-___
+### **Privacy**
 
-This is the Sublime Text client for [Tabnine](https://tabnine.com), advanced AI based autocomplete for all programming languages. Tabnine Indexes your entire project by reading your `.gitignore` [or others](https://www.tabnine.com/faq#nongit), and determines which files to index. 
+Concerned about privacy and security? So are we!
+​
+Your code’s privacy is our highest priority. Tabnine keeps your code completely private
+​
+Tabnine offers code completion suggestions based on a model trained on millions of open-source code lines, which are then derived from the code you are currently working on. Tabnine only sends minimal contextual information from your currently edited file that allows us to make predictions based on your current local scope
+​
+We do not use your code to train our models and the information sent to our servers is only used to compute your prediction and is not being saved on our end
 
-- Enter long variable names using  minimal keystrokes and leverage a mnemonic completion engine.
-- Zero configuration. Tabnine works out of the box.
-- Highly responsive: Produces a list of suggestions in less than 10 milliseconds on average.
+Find out more about how we keep your code private [here](https://www.codota.com/tabnine-code-privacy)
 
-Tabnine is part of [Codota](https://www.codota.com/) 
+### **_Recommended by developers everywhere:_**
 
-<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/tabnine.gif" height="300" style="border-radius: 4px" />
+​
+![Tom Dohnal Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-1.png)
+​
 
+![Paul Mtali Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-2.png)
 
-### **Deep Completion:**
-___
+​
+![albertgao Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-3.png)
 
-[Deep Tabnine](https://www.tabnine.com/blog/local/) is trained on around 2 million files from GitHub. During training,
-Tabnine’s goal is to predict the next token given the tokens that came before.
-To achieve this goal, Tabnine learns complex behaviour, such as type inference
-in dynamically typed languages.
+​
+![David Hariri Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-4.png)
 
+​
+![Chris Bongers Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-5.png)
 
-Deep Tabnine can use subtle clues that are difficult for traditional tools to access. For example,  
-the return type of `app.get_user()`is assumed to be an object
-with setter methods, while the return type of `app.get_users()` is assumed to be a list.
+​
+![Andrea Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-6.png)
 
-Deep Tabnine is based on GPT-2, which uses the Transformer network architecture. This architecture was first developed to solve problems in natural language processing. Although modelling code and modelling natural language might appear to be unrelated tasks, modelling code requires understanding English in some unexpected ways.
-
-### **Tabnine Deep Cloud:**
-___
-Tabnine requires consumption of memory resources when being run locally on your computer. It may incur some latency that is not optimal to all PC’s. With that in mind, Tabnine has developed a Cloud solution, called Tabnine Deep Cloud.
-
-
-We understand that users concerned with their privacy prefer to keep their code on their own machine. Rest assured that we’re taking the following steps to address this concern:
-For individual developers, we are working on a reduced-size model which can run on a laptop with reasonable latency. Update: we’ve released Tabnine Local.
-For enterprise users, we will soon roll-out the option to license the model and run it on your own hardware. We can also train a custom model for you which understands the unique patterns and style within your codebase. If this could be relevant to you or your team, we would love to hear more about your use case at enterprise@tabnine.com.
-Enabling Tabnine Deep Cloud sends small parts of your code to our servers to provide GPU-accelerated completions.
-Other than for the purpose of fulfilling your query, your data isn’t used, saved or logged in any way.
-
-**[You can enable Tabnine Deep Cloud for free by signing up Tabnine Professional](https://www.tabnine.com/trial/)**
-
-**[You can read more about Deep Completion](https://www.tabnine.com/blog/deep)**
 
 ### auto_complete: false
 ___
 The Tabnine sublime plugin disables sublime's [built in autocomplete](https://www.sublimetext.com/docs/3/auto_complete.html).  
 It does that, because sublime's builtin autocomplete does not support all the features required by Tabnine.  
 If you ever uninstall Tabnine, remember to re-enable it.
-
-### **Frequently Asked Questions:**
-___
-<details><summary>Is Tabnine simple to use?</summary>
-<p>Tabnine works for all programming languages.
-Tabnine does not require any configuration in order to work.
-Tabnine does not require any external software (though it can integrate with it).
-Since Tabnine does not parse your code, it will never stop working because of a mismatched bracket.
-</p>
-</details>
-
-<details><summary>Will Tabnine leak my source code?</summary>
-<p>By default, Tabnine makes web requests only for the purposes of downloading updates and validating registration keys. In this case your code is not sent anywhere, even to Tabnine servers.
-You may opt in to Tabnine Deep Cloud, which allows you to use Tabnine’s servers for GPU-accelerated completions powered by a deep learning model. If sending code to a cloud service is not possible, we also offer a self-hosted option. 
-Contact us at enterprise@tabnine.com.
-</p>
-</details>
-<br/>
 
 ### **Development:**
 ___
