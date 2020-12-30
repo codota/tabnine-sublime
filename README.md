@@ -30,7 +30,7 @@ No more memorizing coding syntax, no more worrying about typos, no more neglecti
 Tabnine is trusted by more than a million developers worldwide. [Join us Now](https://www.tabnine.com/install) and enjoy the coding future, today. It’s Free!
 
 ​
-![With and without Tabnine](https://github.com/codota/TabNine/raw/master/with-and-without-tabnine.gif)
+<img src="https://github.com/codota/TabNine/raw/master/with-and-without-tabnine.gif" width="838" />
 
 
 ### **Privacy**
