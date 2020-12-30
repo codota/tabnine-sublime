@@ -12,31 +12,43 @@
 ## **Tabnine For Sublime**
 
 Tabnine is a powerful Artificial Intelligence assistant designed to help you code faster, reduce mistakes, and discover best coding practices - without ever leaving the comfort of Sublime.
+
 ​
 Tabnine studies publicly shared code and use A.I deep learning algorithms that provide us with the ability to predict your next coding needs and suggest one-click code completion.
+
 ​
 Tabnine works with all major programming languages including JavaScript, Python, TypeScript, PHP, C/C++, HTML/CSS, Go, Java, Ruby, C#, Rust, SQL, Bash, Kotlin, Julia, Lua, OCaml, Perl, Haskell, and React.
 ​
+
 We believe that coding is like Lego: Imagination is your only limit.
 We’re here to help provide you with the perfect code building blocks at the right time
 ​
+
 No more memorizing coding syntax, no more worrying about typos, no more neglecting to add that crucial comma, or even search for coding solutions online. Start reducing your development costs, deliver reliable code faster, and explore best coding practices.
 ​
+
 Tabnine is trusted by more than a million developers worldwide. [Join us Now](https://www.tabnine.com/install) and enjoy the coding future, today. It’s Free!
+
 ​
 ![With and without Tabnine](https://github.com/codota/TabNine/raw/master/with-and-without-tabnine.gif)
+
 
 ### **Privacy**
 
 Concerned about privacy and security? So are we!
+
 ​
 Your code’s privacy is our highest priority. Tabnine keeps your code completely private
 ​
+
 Tabnine offers code completion suggestions based on a model trained on millions of open-source code lines, which are then derived from the code you are currently working on. Tabnine only sends minimal contextual information from your currently edited file that allows us to make predictions based on your current local scope
 ​
+
 We do not use your code to train our models and the information sent to our servers is only used to compute your prediction and is not being saved on our end
 
+
 Find out more about how we keep your code private [here](https://www.codota.com/tabnine-code-privacy)
+
 
 ### **_Recommended by developers everywhere:_**
 
