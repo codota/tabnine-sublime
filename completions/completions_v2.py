@@ -426,9 +426,9 @@ def _init_rules():
             copyfile(src, dest)
 
 
-def plugin_unloaded():
-    from package_control import events
+# def plugin_unloaded():
+# from package_control import events
 
-    if events.remove("TabNine"):
-        _revert_config()
-        uninstalling()
+# if events.remove("TabNine"):
+#     _revert_config()
+#     uninstalling()
