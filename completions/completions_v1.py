@@ -545,8 +545,8 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
         open_config()
 
 
-# def plugin_unloaded():
-# from package_control import events
+def plugin_unloaded():
+    from package_control import events
 
-# if events.remove("TabNine"):
-#     uninstalling()
+    if events.remove("Tabnine"):
+        uninstalling()
