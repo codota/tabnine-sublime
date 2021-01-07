@@ -16,7 +16,11 @@ AUTOCOMPLETE_CHAR_LIMIT = 100000
 PREFERENCES_PATH = "Preferences.sublime-settings"
 GLOBAL_HIGHLIGHT_COUNTER = 0
 
-sublime.load_settings(PREFERENCES_PATH).set("auto_complete", False)
+
+def plugin_loaded():
+    sublime.load_settings(PREFERENCES_PATH).set("auto_complete", False)
+    sublime.save_settings(PREFERENCES_PATH)
+
 
 GLOBAL_IGNORE_EVENTS = False
 

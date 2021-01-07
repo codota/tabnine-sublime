@@ -399,11 +399,13 @@ def _setup_config():
             },
         ],
     )
+    sublime.save_settings(PREFERENCES_PATH)
 
 
 def _revert_config():
     sublime.load_settings(PREFERENCES_PATH).erase("auto_complete_triggers")
     sublime.load_settings(PREFERENCES_PATH).erase("auto_complete")
+    sublime.save_settings(PREFERENCES_PATH)
 
 
 def _init_rules():
