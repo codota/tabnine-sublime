@@ -44,7 +44,7 @@
                             },
                             {
                                 "id" : "example",
-                                "caption" : "Open Tabnine Configuration",
+                                "caption" : "Open Tabnine Home",
                                 "command" : "openconfig"
                             }
                         ]

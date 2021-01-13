@@ -1,0 +1,5 @@
+[{
+	"id" : "tabnine-home",
+    "caption" : "Open Tabnine Home",
+    "command" : "openconfig"
+}]
