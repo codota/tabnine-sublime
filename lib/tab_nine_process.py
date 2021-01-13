@@ -1,4 +1,5 @@
 import os
+import platform
 import sublime
 import subprocess
 from imp import reload
@@ -38,7 +39,15 @@ def parse_semver(s):
 
 
 def get_arch():
-    sublime.arch()
+    try:
+        if sublime.platform() == "osx":
+            if "ARM64" in platform.version().upper():
+                return "arm64"
+    except Exception as e:
+        print("Error checking if apple m1:", e)
+        pass
+
+    return sublime.arch()
 
 
 def get_tabnine_path(binary_dir):
@@ -50,7 +59,7 @@ def get_tabnine_path(binary_dir):
         ("linux", "x64"): "x86_64-unknown-linux-musl/TabNine",
         ("osx", "x32"): "i686-apple-darwin/TabNine",
         ("osx", "x64"): "x86_64-apple-darwin/TabNine",
-        ("osx", "aarch64"): "aarch64-apple-darwin/TabNine",
+        ("osx", "arm64"): "aarch64-apple-darwin/TabNine",
         ("windows", "x32"): "i686-pc-windows-gnu/TabNine.exe",
         ("windows", "x64"): "x86_64-pc-windows-gnu/TabNine.exe",
     }
