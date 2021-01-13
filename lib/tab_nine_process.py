@@ -40,6 +40,7 @@ def parse_semver(s):
 
 def get_arch():
     try:
+        # handle a case of m1 running under roseeta
         if sublime.platform() == "osx":
             if "ARM64" in platform.version().upper():
                 return "arm64"
