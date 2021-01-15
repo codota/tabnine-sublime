@@ -112,7 +112,7 @@ class TabNineProcess:
         extra_args = settings.get("extra_args", None)
         if extra_args is not None:
             args += extra_args
-        plugin_version = PACK_MANAGER.get_metadata("TabNine").get("version")
+        plugin_version = PACK_MANAGER.get_metadata("Tabnine").get("version")
         if not plugin_version:
             plugin_version = "Unknown"
         sublime_version = sublime.version()
