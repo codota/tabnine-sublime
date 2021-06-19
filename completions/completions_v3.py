@@ -219,9 +219,11 @@ class OpenconfigCommand(sublime_plugin.TextCommand):
 
 
 def plugin_loaded():
-    # _setup_config()
+    _setup_config()
     _init_rules()
 
+def _setup_config():
+    sublime.load_settings(PREFERENCES_PATH).set("auto_complete", True)
 
 def _init_rules():
     for language in ["Python", "JavaScript"]:
