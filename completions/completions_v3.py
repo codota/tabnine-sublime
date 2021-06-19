@@ -137,7 +137,7 @@ class TabNineListener(sublime_plugin.EventListener):
         #       [tabnine] 06/17/21 12:39:05.770 | on_post_text_command, command: commit_completion, args: None 
         #
         if prefix != "":
-            self._last_query_location = locations[0] - len(prefix) # the len here must be in the same format as sublime's string
+            self._last_query_location = locations[0] - len(prefix)
         sublime.set_timeout_async(_run_complete, 0)
         return self._completionList
 
