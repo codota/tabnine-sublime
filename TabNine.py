@@ -21,13 +21,14 @@ if _is_ST3:
 from .lib.requests import get_capabilities, set_state  # noqa E402
 from .lib.settings import is_native_auto_complete  # noqa E402
 
-capabilities = get_capabilities()
+
+def is_sublime_new_experience_enabled():
+    capabilities = get_capabilities()
+    return capabilities["enabled_features"] and "sublime.new-experience" in capabilities["enabled_features"]
+
 is_v2 = False
 
-if is_native_auto_complete() or (
-    capabilities["enabled_features"]
-    and "sublime.new-experience" in capabilities["enabled_features"]
-):
+if is_native_auto_complete() or is_sublime_new_experience_enabled():
     is_v2 = True
     if int(sublime.version()) >= 4000:
         from .completions.completions_v3 import *
