@@ -1,6 +1,7 @@
 from .commit_completion_handler import handle_completion
 import sublime
 import sublime_plugin
+import copy
 
 from ..lib import logger
 from ..lib.requests import (
@@ -67,7 +68,7 @@ class TabNineListener(sublime_plugin.EventListener):
         )
 
     def on_text_command(self, view, command_name, args):
-        self._last_state = self._state
+        self._last_state = copy.copy(self._state)
 
     def on_post_text_command(self, view, command_name, args):
         if command_name in [
