@@ -53,7 +53,7 @@ class TabNineListener(sublime_plugin.EventListener):
                 ),
                 completion_format=sublime.COMPLETION_FORMAT_SNIPPET,
                 kind=(
-                    sublime.KIND_ID_SNIPPET,
+                    sublime.KIND_ID_COLOR_PURPLISH,
                     ATTRIBUTION_ELEMENT,
                     r.get("detail", ""),
                 ),
@@ -62,7 +62,8 @@ class TabNineListener(sublime_plugin.EventListener):
         ]
 
         return sublime.CompletionList(
-            completions=completions, flags=sublime.DYNAMIC_COMPLETIONS
+            completions=completions,
+            flags=sublime.DYNAMIC_COMPLETIONS | sublime.INHIBIT_REORDER,
         )
 
     def on_text_command(self, view, command_name, args):
