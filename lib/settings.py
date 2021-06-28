@@ -25,9 +25,15 @@ def _setup():
     if _SETTINGS is None:
         try:
             with open(_settings_dir) as json_file:
-                _SETTINGS = json.load(json_file)
+                data = remove_trailing_comma(json_file)
+                _SETTINGS = json.loads(data)
         except:  # noqa E722
             _SETTINGS = {}
+
+
+def remove_trailing_comma(json_file):
+    data = json_file.read().replace(",\n}", "\n}")
+    return data
 
 
 def is_development():

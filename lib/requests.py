@@ -1,4 +1,3 @@
-from . import logger
 from .tab_nine_process import tabnine_proc
 from .completion_origin import CompletionOrigin
 import os
