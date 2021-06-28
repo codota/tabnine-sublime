@@ -3,10 +3,10 @@ from ..lib import logger
 from ..lib.requests import set_completion_state
 
 
-def handle_completion(view, completions, previous_location, prefix):
+def handle_completion(view, completions, location, prefix):
     current_location = view.sel()[0].end()
     current_line = view.line(sublime.Region(current_location, current_location))
-    substitution = view.substr(sublime.Region(previous_location, current_location))
+    substitution = view.substr(sublime.Region(location, current_location))
 
     selected_completion = next(
         (x for x in completions if x["new_prefix"] == prefix + substitution),
@@ -55,7 +55,7 @@ def handle_completion(view, completions, previous_location, prefix):
         set_completion_state(
             view.file_name(),
             current_location,
-            previous_location - len(prefix),
+            location - len(prefix),
             current_line,
             substitution,
             selected_completion,

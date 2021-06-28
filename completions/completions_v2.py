@@ -370,11 +370,6 @@ class TabNineListener(sublime_plugin.EventListener):
             return False
 
 
-class OpenconfigCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        open_config()
-
-
 def plugin_loaded():
     _setup_config()
     _init_rules()

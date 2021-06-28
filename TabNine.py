@@ -18,18 +18,23 @@ if _is_ST3:
     prefix = None
 
 
-from .lib.requests import get_capabilities, set_state  # noqa E402
+from .lib.requests import get_capabilities, set_state, open_config  # noqa E402
 from .lib.settings import is_native_auto_complete  # noqa E402
 
 capabilities = get_capabilities()
 is_v2 = False
+is_v3 = False
 
 if is_native_auto_complete() or (
     capabilities["enabled_features"]
     and "sublime.new-experience" in capabilities["enabled_features"]
 ):
-    is_v2 = True
-    from .completions.completions_v2 import *
+    if int(sublime.version()) >= 4000:
+        is_v3 = True
+        from .completions.completions_v3 import *
+    else:
+        is_v2 = True
+        from .completions.completions_v2 import *
 else:
     from .completions.completions_v1 import *
 
@@ -62,4 +67,9 @@ class EnableNativeAutoCompleteCommand(sublime_plugin.TextCommand):
         sublime_plugin.reload_plugin(__name__)
 
     def is_visible(self, *args):
-        return not is_v2
+        return not is_v2 and not is_v3
+
+
+class OpenconfigCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        open_config()

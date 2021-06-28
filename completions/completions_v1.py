@@ -544,11 +544,6 @@ def add_execute_permission(path):
         os.chmod(path, new_mode)
 
 
-class OpenconfigCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        open_config()
-
-
 def plugin_unloaded():
     from package_control import events
 
