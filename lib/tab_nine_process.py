@@ -5,13 +5,9 @@ import subprocess
 from imp import reload
 from json import loads, dumps
 import stat
-from .settings import get_settings_eager, is_native_auto_complete
-
-
-from package_control import package_manager
+from .settings import get_settings_eager, is_native_auto_complete, get_version
 
 SETTINGS_PATH = "TabNine.sublime-settings"
-PACK_MANAGER = package_manager.PackageManager()
 MAX_RESTARTS = 10
 
 
@@ -112,7 +108,7 @@ class TabNineProcess:
         extra_args = settings.get("extra_args", None)
         if extra_args is not None:
             args += extra_args
-        plugin_version = PACK_MANAGER.get_metadata("Tabnine").get("version")
+        plugin_version = get_version()
         if not plugin_version:
             plugin_version = "Unknown"
         sublime_version = sublime.version()
