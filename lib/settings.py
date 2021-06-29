@@ -7,10 +7,14 @@ _settings_dir = os.path.abspath(
         _install_directory, os.pardir, os.pardir, "User", "TabNine.sublime-settings"
     )
 )
+_package_dir = os.path.abspath(
+    os.path.join(_install_directory, os.pardir, os.pardir, "TabNine", "package.json")
+)
 
 _SETTINGS = None
 _DEVELOPMENT = None
 _IS_NATIVE_AUTO_IMPORT = None
+_VERSION = None
 
 
 def get_settings_eager():
@@ -29,6 +33,17 @@ def _setup():
                 _SETTINGS = json.loads(data)
         except:  # noqa E722
             _SETTINGS = {}
+
+
+def get_version():
+    global _VERSION
+    if _VERSION is None:
+        try:
+            with open(_package_dir) as json_file:
+                _VERSION = json.load(json_file)["version"]
+        except Exception as e:  # noqa E722
+            _VERSION = None
+    return _VERSION
 
 
 def remove_trailing_comma(json_file):
