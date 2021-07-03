@@ -68,7 +68,6 @@ class TabNineListener(sublime_plugin.EventListener):
         self._last_query_location = None
         self._user_message = []
         self._results = []
-        self._completionList = sublime.CompletionList(None, sublime.DYNAMIC_COMPLETIONS)
 
     def on_activated(self, view):
         self.on_any_event(view)
@@ -80,9 +79,15 @@ class TabNineListener(sublime_plugin.EventListener):
         )
         view = view.window().active_view()
         if view.is_scratch():
-            return sublime.CompletionList([])
+            return None
 
-        def _run_complete():
+        if should_return_empty_list(view, locations, prefix):
+            return None
+
+        if is_tabnine_disabled(view):
+            return None
+
+        def _run_complete(cp_list):
             self.on_any_event(view)
 
             logger.debug("_run_complete")
@@ -95,8 +100,13 @@ class TabNineListener(sublime_plugin.EventListener):
                 self.region_includes_end,
             )
             if response is None:
+                logger.debug("response is None")
+
                 self._results = []
                 self._user_message = []
+                # According to the "MultiCompletionList" class in sublime_plugin.py
+                #     CompletionList(completions=None) instance must be "fulfilled" by "set_completions".
+                cp_list.set_completions([], sublime.DYNAMIC_COMPLETIONS)
                 return
 
             logger.debug("--- response ---")
@@ -113,19 +123,7 @@ class TabNineListener(sublime_plugin.EventListener):
 
             logger.debug("completions callback: {}".format(completions))
 
-            self._completionList.set_completions(completions, sublime.DYNAMIC_COMPLETIONS)
-            self._completionList = sublime.CompletionList(None, sublime.DYNAMIC_COMPLETIONS)
-
-        EMPTY_COMPLETION_LIST = (
-            [],
-            0, # sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS,
-        )
-
-        if should_return_empty_list(view, locations, prefix):
-            return EMPTY_COMPLETION_LIST
-
-        if is_tabnine_disabled(view):
-            return EMPTY_COMPLETION_LIST if prefix.strip() == "" else None
+            cp_list.set_completions(completions, sublime.DYNAMIC_COMPLETIONS)
 
         # ignore setting self._last_query_location when prefix is empty
         #     set self._last_query_location in `on_text_command` event before commit_completion
@@ -138,8 +136,10 @@ class TabNineListener(sublime_plugin.EventListener):
         #
         if prefix != "":
             self._last_query_location = locations[0] - len(prefix)
-        sublime.set_timeout_async(_run_complete, 0)
-        return self._completionList
+
+        completionList = sublime.CompletionList()
+        sublime.set_timeout_async(lambda: _run_complete(completionList), 0)
+        return completionList
 
     def get_completion(self):
         return [
