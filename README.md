@@ -1,75 +1,132 @@
 [twitter-shield]: https://img.shields.io/twitter/follow/Tabnine_?style=social
-[twitter-url]: http://bit.ly/Tabnine_Twitter
+[twitter-url]: https://bit.ly/2WHsEtD
 [github-shield]: https://img.shields.io/github/stars/codota/Tabnine?style=social
-[github-url]: http://bit.ly/Tabnine_Git
+[github-url]: https://bit.ly/36iGtUU
 [youtube-shield]: https://img.shields.io/youtube/views/TKLkXh_c-Gw?style=social
-[youtube-url]: http://bit.ly/T9_YouTube
+[youtube-url]: https://bit.ly/36slY7c
 
 [![Github Repo][github-shield]][github-url]
 [![Youtube Demo Video][youtube-shield]][youtube-url]
 [![Twitter Follow][twitter-shield]][twitter-url]
 
-## **Tabnine For Sublime**
+# Tabnine - AI Code Completion
 
-Tabnine is a powerful Artificial Intelligence assistant designed to help you code faster, reduce mistakes, and discover best coding practices - without ever leaving the comfort of Sublime.
+Tabnine is an AI-powered code completion extension **trusted by millions of developers** around the world. Whether you’re just getting started as a developer or if you’ve been doing it for decades, Tabnine will help you code twice as fast with half the keystrokes – all in your favorite IDE.
 
-​
-Tabnine studies publicly shared code and use A.I deep learning algorithms that provide us with the ability to predict your next coding needs and suggest one-click code completion.
+### **The Right Tool for The Job**
 
-​
-Tabnine works with all major programming languages including JavaScript, Python, TypeScript, PHP, C/C++, HTML/CSS, Go, Java, Ruby, C#, Rust, SQL, Bash, Kotlin, Julia, Lua, OCaml, Perl, Haskell, and React.
-​
+Whether you call it **IntelliSense, intelliCode, autocomplete, AI-assisted code completion, AI-powered code completion, AI copilot, AI code snippets, code suggestion, code prediction, code hinting**, or **content assist**, you probably already know that it can save you tons of time, easily cutting your keystrokes in half.
 
-We believe that coding is like Lego: Imagination is your only limit.
-We’re here to help provide you with the perfect code building blocks at the right time
-​
+Powered by sophisticated **machine learning models** trained on billions of lines of trusted **Open Source code** from GitHub, Tabnine is the most advanced **AI-powered code completion** copilot available today. And like GitHub, it is an essential tool for professional developers.
 
-No more memorizing coding syntax, no more worrying about typos, no more neglecting to add that crucial comma, or even search for coding solutions online. Start reducing your development costs, deliver reliable code faster, and explore best coding practices.
-​
+![With and without Tabnine Java](https://github.com/codota/TabNine/raw/master/with-and-without-tabnine-java.gif)
 
-Tabnine is trusted by more than a million developers worldwide. [Join us Now](https://www.tabnine.com/install) and enjoy the coding future, today. It’s Free!
+#### **Tabnine works with all major programming languages including:**
 
-​
-<img src="https://github.com/codota/TabNine/raw/master/with-and-without-tabnine.gif" width="838" alt="with and without Tabnine gif"/>
+|     Python     |   Javascript    |   Java   |
+| :------------: | :-------------: | :------: |
+|  extended JS   |    **React**    |   PHP    |
+| **Typescript** |    C Header     |   Bash   |
+|       ML       |      Swift      | **Ruby** |
+|      Perl      |    **Rust**     |   SQL    |
+|    **Vue**     |       F#        |  Scala   |
+|     Julia      |      TOML       |  Shell   |
+|      YMAL      | **C / C++/ C#** |   HTML   |
+|      Lua       |    Markdown     | Haskell  |
+|     **Go**     |   Objective C   | **JSON** |
+|   CSS / SCSS   |   **Angular**   |  Kotlin  |
+
+### **Our Vision**
+
+Knowing that most of the code generated today has been created before begs the question - what if developers didn’t need to remember it, search for it, and type it again?
+
+Learning from the past, focusing on the future, that’s the bedrock Tabnine is built on. Our AI-powered code completion tool embodies that vision by harnessing the collective achievements of every qualified piece of open source code ever written and serving that knowledge to our users in the form of code completion suggestions. As we move forward, Tabnine’s AI will play a valuable role in shaping the entire software development lifecycle.
+
+Tabnine’s AI studies mountains of publicly available open source code and combines that with knowledge of your specific project and preferences creating code suggestions customized just for you. That saves you tons of keystrokes, and tons of time, all while keeping you aligned with best practices, and avoiding frustrating typos.
+
+### **Pick the Plan that Works Best for You!**
+
+**Tabnine Basic**
+Tabnine’s Basic AI-powered code completion model is a fantastic time-saving tool for any developer. The Basic plan has plenty of free daily code completion suggestions to get you started, with no cost, no credit card, and no commitment.
+
+**Tabnine Pro**
+Supercharge your AI code completion suggestions with our advanced ML model, unlock unlimited code suggestions, customize your experience, and get priority support. Experience the power of Tabnine Pro today!
+
+### **Easy Installation on Sublime**
+
+See full instructions [here](https://www.tabnine.com/install/sublime)
+
+### **Investing In Our Community**
+
+**FREE Tabnine Student Plan**
+We know that tuition, books, rent, and food can get crazy expensive, that’s why Tabnine helps support the community and the dev superstars of tomorrow with a 100% free Tabnine Student license with all our Pro perks renewable for as long as you are a student.
+
+[Join the Tabnine Student Program for free](https://www.tabnine.com/students?utm_source=ide_marketplace&utm_medium=organic&utm_campaign=sublime_marketplace)
 
 
-### **Privacy**
+#### **FAQ**
 
-Concerned about privacy and security? So are we!
+Got a question? We’ve got the answer - Check out our [FAQ](https://www.tabnine.com/faq) page
 
-​
-Your code’s privacy is our highest priority. Tabnine keeps your code completely private
-​
+#### **Tabnine Support**
 
-Tabnine offers code completion suggestions based on a model trained on millions of open-source code lines, which are then derived from the code you are currently working on. Tabnine only sends minimal contextual information from your currently edited file that allows us to make predictions based on your current local scope
-​
+Having some trouble with installation? Something not working the way you hoped? **Tabnine Support** is always happy to help. Feel free to contact us anytime at support@tabnine.com
 
-We do not use your code to train our models and the information sent to our servers is only used to compute your prediction and is not being saved on our end
+#### **Privacy**
 
+Your privacy is paramount, that’s why Tabnine uses a dual model design. While the public GPT-2 model works its magic continuously scanning hundreds of millions of trusted open source parameters, a second separate model runs locally on your machine keeping your code 100% private.
 
-Find out more about how we keep your code private [here](https://www.codota.com/tabnine-code-privacy)
+In addition, the local model focuses on learning your personal and project coding preferences, constantly improving the quality and accuracy of your code suggestions. Always separate. Always secure. Always private.
 
+Find out more about how we keep your code private [here](https://www.tabnine.com/code-privacy)
+
+### **Tabnine Hub**
+
+A quick click on **_Tabnine_** on your IDE status bar takes you directly to your **_Tabnine Hub_** where you can easily update and manage all your account options and customize your suggestion preferences.
+
+### **Usage**
+
+Tabnine is a textual autocomplete extension. When you type a specific string in your editor, you will be shown the Tabnine completion dialog box with suggestions for completing the code you’ve begun typing.
+
+### **Deep Completion**
+
+Deep Tabnine is trained on millions of files from GitHub. During training, Tabnine’s goal is to predict the next token given the tokens that came before. To achieve this goal, Tabnine learns complex behavior, such as type inference in dynamically typed languages.
+
+Deep Tabnine can use subtle clues that are difficult for traditional tools to access. For example, the return type of `app.get_user()` is assumed to be an object with setter methods, while the return type of `app.get_users()` is assumed to be a list.
+
+Deep Tabnine is based on GPT-2, which uses the **_Transformers Network Architecture_**. This architecture was first developed to solve problems in natural language processing. Although modeling code and modeling natural language might appear to be unrelated tasks, modeling code requires understanding English in some unexpected ways.
+
+- Tabnine Indexes your entire project and determines which files to ignore by reading your `.gitignore`
+- Tabnine cuts your number of keystrokes in half and eliminates unnecessary typos
+- Tabnine works right out of the box ensuring frictionless installation and configuration
+- Tabnine offers code completion suggestions in less than 10 milliseconds
+
+### Commuinities
+
+- [Join the Tabnine Discord server](https://discord.gg/5GnbDg5Jmg)
+- [Join the Tabnine community in Slack](https://join.slack.com/t/tabnine-community/shared_invite/zt-mi5n0v6f-4W0Ap4yAUQXS~nVvxwSoJg)
 
 ### **_Recommended by developers everywhere:_**
 
-​
-![Tom Dohnal Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-1.png)
-​
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-27.png" alt="William Candillon Tweet" width="50%">
 
-![Paul Mtali Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-2.png)
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-7.png" alt="Imed Boumalek Tweet" width="50%">
 
-​
-![albertgao Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-3.png)
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-14.png" alt="ramnivas Tweet" width="50%">
 
-​
-![David Hariri Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-4.png)
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-16.png" alt="bob paskar Tweet" width="50%">
 
-​
-![Chris Bongers Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-5.png)
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-19.png" alt="Nick Radford Tweet" width="50%">
 
-​
-![Andrea Tweet](https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-6.png)
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-28.png" alt="Hugues BR Tweet" width="50%">
 
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-32.png" alt="JohnyTheCarrot Tweet" width="50%">
+
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-33.png" alt="Donald E Fredrick Tweet" width="50%">
+
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-36.png" alt="Joshua Kelly Tweet" width="50%">
+
+<img src="https://raw.githubusercontent.com/codota/tabnine-vscode/master/assets/twitter-ps-38.png" alt="JDerek Braid Tweet" width="50%">
 
 ### auto_complete: false
 ___
@@ -86,5 +143,8 @@ pip install -r requirements-dev.txt
 ```
 
 ### **Note:**
-___
-A note on licensing: this repo includes source code as well as packaged Tabnine binaries. The MIT license only applies to the source code, not the binaries. The binaries are covered by the [Tabnine End User License Agreement](https://tabnine.com/eula).
+
+---
+
+A note on licensing: this repo includes source code as well as packaged Tabnine binaries. The MIT license only applies to the source code, not the binaries. The binaries are covered by the [Tabnine Terms of Use](https://www.tabnine.com/terms).
+
